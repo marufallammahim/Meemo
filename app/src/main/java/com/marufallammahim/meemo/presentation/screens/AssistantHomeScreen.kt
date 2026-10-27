@@ -162,7 +162,7 @@ fun AssistantHomeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Say "Hello Meemo, turn on the flashlight" or tap a quick command above.",
+                            text = "Say \"Hello Meemo, turn on the flashlight\" or tap a quick command above.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

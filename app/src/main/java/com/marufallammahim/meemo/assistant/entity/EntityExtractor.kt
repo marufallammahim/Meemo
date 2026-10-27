@@ -120,8 +120,8 @@ class EntityExtractor @Inject constructor() {
         val enMatch = enRegex.find(text)
         if (enMatch != null) {
             return ExtractedEntity.AliasDefinition(
-                triggerPhrase = enMatch.groupValues[1].trim().removeSurrounding("""),
-                targetAppName = enMatch.groupValues[2].trim().removeSurrounding(""")
+                triggerPhrase = enMatch.groupValues[1].trim().removeSurrounding("\""),
+                targetAppName = enMatch.groupValues[2].trim().removeSurrounding("\"")
             )
         }
         val bnRegex = Regex("^যখন আমি বলব\\s+(.+?)\\s+তখন\\s+(.+?)\\s+(?:খোলো|চালু করো)$")
