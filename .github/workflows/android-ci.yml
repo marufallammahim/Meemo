@@ -2,9 +2,15 @@ name: Meemo Android CI
 
 on:
   push:
-    branches: ["main", "develop"]
+    branches:
+      - main
+      - develop
+      - meemo-project-upload
   pull_request:
-    branches: ["main", "develop"]
+    branches:
+      - main
+      - develop
+      - meemo-project-upload
   workflow_dispatch:
 
 permissions:
@@ -26,9 +32,6 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # The uploaded ZIP contains an incomplete gradle-wrapper.jar.
-      # Install Gradle independently first, regenerate the official wrapper,
-      # then use ./gradlew for the rest of the job.
       - name: Install Gradle 8.9 and cache dependencies
         uses: gradle/actions/setup-gradle@v4
         with:
