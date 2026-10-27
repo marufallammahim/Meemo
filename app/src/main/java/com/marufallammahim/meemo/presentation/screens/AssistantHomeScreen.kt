@@ -102,7 +102,7 @@ fun AssistantHomeScreen(
         // 3. Active Voice Partial Transcript / Error / Ambiguity / Confirmation Cards
         if (state.livePartialTranscript.isNotBlank()) {
             Text(
-                text = "Heard: "${state.livePartialTranscript}"",
+                text = "Heard: \"${state.livePartialTranscript}\"",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(vertical = 4.dp)

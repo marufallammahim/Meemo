@@ -192,7 +192,7 @@ fun MemoryAndAliasesScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = ""${alias.triggerPhrase}" -> ${alias.targetEntity}",
+                                text = "\"${alias.triggerPhrase}\" -> ${alias.targetEntity}",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
@@ -426,7 +426,7 @@ fun PrivacyAndSettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Foreground Wake-Word ("Hello Meemo")")
+                            Text("Foreground Wake-Word (\"Hello Meemo\")")
                             Text(
                                 "Uses visible microphone foreground notification when active.",
                                 style = MaterialTheme.typography.bodyMedium
