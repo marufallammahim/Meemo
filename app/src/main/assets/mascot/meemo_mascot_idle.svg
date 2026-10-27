@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <title>Meemo Cat Mascot - Idle State</title>
+  <polygon points="26,46 18,16 48,30" fill="#5A0719" />
+  <polygon points="29,42 23,22 44,32" fill="#D96B86" />
+  <polygon points="94,46 102,16 72,30" fill="#5A0719" />
+  <polygon points="91,42 97,22 76,32" fill="#D96B86" />
+  <rect x="20" y="28" width="80" height="68" rx="34" fill="#7A1730" stroke="#D96B86" stroke-width="2.5" />
+  <circle cx="43" cy="58" r="6.5" fill="#F5F5F7" />
+  <circle cx="77" cy="58" r="6.5" fill="#F5F5F7" />
+  <polygon points="55,67 65,67 60,73" fill="#D96B86" />
+  <path d="M49 77 Q60 85 71 77" fill="none" stroke="#F5F5F7" stroke-width="3" stroke-linecap="round" />
+</svg>

@@ -1,0 +1,25 @@
+# Gradle & Android build outputs
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/app/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+
+# Keystores & Secrets (NEVER COMMIT)
+*.jks
+*.keystore
+secrets.properties
+google-services.json
+api_keys.properties
+
+# OS & Editor temporary files
+*~
+*.swp
+*.bak
+*.tmp
+*.log

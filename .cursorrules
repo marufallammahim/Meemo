@@ -1,0 +1,31 @@
+# .cursorrules — Enforceable Coding-Agent Policy for Meemo (`com.marufallammahim.meemo`)
+
+1. **Specification First:** Always read `01_PRD.md`, `02_AppFlow.md`, `03_UI_Spec.md`, `04_TRD.md`, `05_Schema.md`, `06_Plan.md`, and `Gimini.md` before modifying code.
+2. **Kotlin & Package Conventions:**
+   - Package namespace must be strictly `com.marufallammahim.meemo`.
+   - Use immutable `val` properties, `sealed interface` hierarchies for states/results/errors, and explicit visibility modifiers.
+   - Zero `TODO()`, empty catch blocks, or hardcoded fake device metrics in production code.
+3. **Jetpack Compose State Management:**
+   - Expose a single `@Immutable` UI state via `StateFlow<UiState>` per ViewModel.
+   - Collect flows lifecycle-safely using `collectAsStateWithLifecycle()`.
+   - Never execute blocking I/O, SQL queries, or shell commands on the UI thread.
+   - Enforce `48.dp` minimum touch targets and explicit accessibility `contentDescription` on interactive and mascot components.
+4. **Clean Architecture Dependency Direction:**
+   - `presentation` -> `assistant` / `domain` <- `data` / `capabilities` / `actions` / `root` / `notifications` / `voice` / `tts`.
+   - Domain models and intent parsers must remain pure Kotlin and independently unit-testable.
+5. **Coroutines & Lifecycle Safety:**
+   - Inject `DispatcherProvider` (`io`, `default`, `main`) rather than hardcoding `Dispatchers.IO` so unit tests run deterministically.
+   - Release `SpeechRecognizer` and `TextToSpeech` resources cleanly when lifecycle stops or closes.
+6. **Permission & Capability Honesty:**
+   - Check `CapabilityManager` before executing any hardware or privileged operation.
+   - Distinguish between `ActionResult.Success`, `ActionResult.PartialSuccess` (e.g., opened system settings panel), `ActionResult.PermissionRequired`, and `ActionResult.Unavailable`.
+7. **Database & Migration Discipline:**
+   - All 10 Room tables in `MeemoDatabase` must define explicit primary keys, indices, and foreign-key constraints.
+   - Provide explicit `Migration` objects (`MeemoMigrations.kt`); never rely on silent destructive migrations for user data.
+8. **Privacy & Root Security:**
+   - Never persist raw notification bodies to disk or logcat by default.
+   - Route all logging through `SafeLogger` with automatic secret and PII redaction.
+   - `ShellExecutor` must only execute pre-registered `RootCommandSpec` templates from `RootCommandPolicy` with strict regex parameter validation and timeouts.
+9. **Testing & Verification:**
+   - Every new intent, capability adapter, or policy rule requires unit test coverage.
+   - Update `06_Plan.md` after each verified step and report build/test outcomes truthfully.

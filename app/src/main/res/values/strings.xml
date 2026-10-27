@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meemo</string>
+    <string name="app_tagline">Your Android. Your Commands. Your Assistant.</string>
+    <string name="notification_listener_label">Meemo Notification Read-Aloud</string>
+    <string name="accessibility_service_label">Meemo Assistant Navigation Helper</string>
+    <string name="accessibility_service_description">Helps Meemo perform user-authorized quick actions and navigation when requested explicitly by you. Meemo never reads passwords or private screen contents.</string>
+    <string name="command_input_hint">Ask Meemo or type a command (English / বাংলা)…</string>
+    <string name="action_start_listening">Start voice input</string>
+    <string name="action_stop_listening">Stop listening</string>
+    <string name="action_stop_speaking">Stop speaking</string>
+    <string name="action_send_command">Send command</string>
+    <string name="status_idle">Ready for your command</string>
+    <string name="status_listening">Listening… Speak now</string>
+    <string name="status_processing">Understanding command…</string>
+    <string name="status_executing">Executing action…</string>
+    <string name="nav_assistant">Assistant</string>
+    <string name="nav_apps">Apps</string>
+    <string name="nav_memory">Aliases</string>
+    <string name="nav_capabilities">Capabilities</string>
+    <string name="nav_settings">Privacy &amp; Settings</string>
+    <string name="wake_word_notification_title">Meemo Wake-Word Active</string>
+    <string name="wake_word_notification_body">Listening for "Hello Meemo" in foreground. Tap to stop at any time.</string>
+</resources>
