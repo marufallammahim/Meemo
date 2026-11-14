@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">মিমো (Meemo)</string>
+    <string name="app_tagline">আপনার অ্যান্ড্রয়েড। আপনার কমান্ড। আপনার অ্যাসিস্ট্যান্ট।</string>
+    <string name="notification_listener_label">মিমো নোটিফিকেশন পাঠক</string>
+    <string name="accessibility_service_label">মিমো অ্যাক্সেসিবিলিটি সহায়ক</string>
+    <string name="accessibility_service_description">আপনার অনুমোদিত কমান্ড এবং নেভিগেশন সম্পন্ন করতে মিমোকে সাহায্য করে। মিমো কখনোই গোপন পাসওয়ার্ড বা ব্যক্তিগত তথ্য সংগ্রহ করে না।</string>
+    <string name="command_input_hint">মিমোকে বলুন বা কমান্ড লিখুন (বাংলা / English)…</string>
+    <string name="action_start_listening">ভয়েস কমান্ড শুরু করুন</string>
+    <string name="action_stop_listening">শোনা বন্ধ করুন</string>
+    <string name="action_stop_speaking">বলা বন্ধ করুন</string>
+    <string name="action_send_command">কমান্ড পাঠান</string>
+    <string name="status_idle">আপনার কমান্ডের জন্য প্রস্তুত</string>
+    <string name="status_listening">শুনছি… এখন বলুন</string>
+    <string name="status_processing">কমান্ড বিশ্লেষণ করা হচ্ছে…</string>
+    <string name="status_executing">কমান্ড কার্যকর করা হচ্ছে…</string>
+    <string name="nav_assistant">অ্যাসিস্ট্যান্ট</string>
+    <string name="nav_apps">অ্যাপস</string>
+    <string name="nav_memory">অ্যালিয়াস</string>
+    <string name="nav_capabilities">সক্ষমতা</string>
+    <string name="nav_settings">গোপনীয়তা ও সেটিংস</string>
+    <string name="wake_word_notification_title">মিমো ওয়েক-ওয়ার্ড সক্রিয়</string>
+    <string name="wake_word_notification_body">"হ্যালো মিমো" শোনার জন্য সক্রিয়। যেকোনো সময় বন্ধ করতে ট্যাপ করুন।</string>
+</resources>

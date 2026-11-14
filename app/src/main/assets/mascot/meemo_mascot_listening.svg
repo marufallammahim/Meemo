@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <title>Meemo Cat Mascot - Listening State</title>
+  <circle cx="60" cy="60" r="54" fill="none" stroke="#D96B86" stroke-width="2" stroke-dasharray="6 4" />
+  <polygon points="24,44 14,12 48,28" fill="#5A0719" />
+  <polygon points="96,44 106,12 72,28" fill="#5A0719" />
+  <rect x="20" y="28" width="80" height="68" rx="34" fill="#5A0719" stroke="#D96B86" stroke-width="3" />
+  <circle cx="43" cy="56" r="8" fill="#D96B86" />
+  <circle cx="43" cy="56" r="4" fill="#F5F5F7" />
+  <circle cx="77" cy="56" r="8" fill="#D96B86" />
+  <circle cx="77" cy="56" r="4" fill="#F5F5F7" />
+  <ellipse cx="60" cy="76" rx="7" ry="5" fill="#D96B86" />
+</svg>
