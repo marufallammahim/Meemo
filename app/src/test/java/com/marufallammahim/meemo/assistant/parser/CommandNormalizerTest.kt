@@ -62,6 +62,20 @@ class CommandNormalizerTest {
     }
 
     @Test
+    fun `cleans outer punctuation while preserving dots and hyphens in package names`() {
+        val result = normalizer.normalize("  , open com.example.my-app.beta!  ")
+
+        assertEquals("open com.example.my-app.beta", result.normalizedText)
+    }
+
+    @Test
+    fun `collapses repeated whitespace between command words`() {
+        val result = normalizer.normalize("open     the    camera")
+
+        assertEquals("open the camera", result.normalizedText)
+    }
+
+    @Test
     fun `handles empty and whitespace-only input safely`() {
         val result = normalizer.normalize("   ...   ")
         assertEquals("", result.normalizedText)
