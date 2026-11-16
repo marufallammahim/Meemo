@@ -94,6 +94,10 @@ class DeterministicIntentMatcherTest {
             matcher.matchIntent(normalizer.normalize("Open Wi-Fi settings")).intent
         )
         assertEquals(
+            MeemoIntent.OPEN_SETTINGS,
+            matcher.matchIntent(normalizer.normalize("নোটিফিকেশন সেটিংস খোলো")).intent
+        )
+        assertEquals(
             MeemoIntent.READ_NOTIFICATIONS,
             matcher.matchIntent(normalizer.normalize("Read my notifications")).intent
         )
