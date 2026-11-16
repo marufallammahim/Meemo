@@ -42,6 +42,7 @@ class CommandSafetyValidatorTest {
             ).isSuccess
         )
     }
+
     @Test
     fun `rejects non finite and out of range AI confidence`() {
         val invalidScores = listOf(
