@@ -37,6 +37,15 @@ class CommandNormalizerTest {
     }
 
     @Test
+    fun `strips supported English wake phrase variants case-insensitively`() {
+        listOf("Hey Meemo, open Chrome", "HI MEEMO! open Chrome", "Okay Meemo: open Chrome").forEach { input ->
+            val result = normalizer.normalize(input)
+            assertTrue(result.wakePhraseDetected)
+            assertEquals("open Chrome", result.normalizedText)
+        }
+    }
+
+    @Test
     fun `strips Bengali wake phrase and converts Bengali numerals to ASCII`() {
         val result = normalizer.normalize("হ্যালো মিমো, ভলিউম ৫০ শতাংশে সেট করো।")
         assertTrue(result.wakePhraseDetected)
