@@ -45,7 +45,7 @@ import com.marufallammahim.meemo.presentation.theme.MeemoDimens
 @Composable
 fun AssistantHomeScreen(
     viewModel: AssistantViewModel,
-    onRequestMicPermission: () -> Unit,
+    onRequestMicPermission: (onResult: (Boolean) -> Unit) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -116,7 +116,7 @@ fun AssistantHomeScreen(
                     if (targetErr is com.marufallammahim.meemo.core.error.MeemoError.PermissionDenied &&
                         targetErr.permissionName == android.Manifest.permission.RECORD_AUDIO
                     ) {
-                        onRequestMicPermission()
+                        onRequestMicPermission { }
                     } else {
                         viewModel.executeRecoveryForError(targetErr)
                     }
@@ -203,8 +203,13 @@ fun AssistantHomeScreen(
             Spacer(modifier = Modifier.width(MeemoDimens.SpaceXS))
             FloatingActionButton(
                 onClick = {
-                    onRequestMicPermission()
-                    viewModel.toggleVoiceListening()
+                    if (state.executionState == AssistantExecutionState.LISTENING) {
+                        viewModel.toggleVoiceListening()
+                    } else {
+                        onRequestMicPermission { granted ->
+                            if (granted) viewModel.toggleVoiceListening()
+                        }
+                    }
                 },
                 containerColor = if (state.executionState == AssistantExecutionState.LISTENING) {
                     MaterialTheme.colorScheme.error
