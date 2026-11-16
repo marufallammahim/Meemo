@@ -51,7 +51,7 @@ class PackageResolver @Inject constructor(
                 )
             }
             .distinctBy { it.packageName }
-            .sortedBy { it.appLabel.lowercase() }
+            .sortedBy { it.appLabel.lowercase(Locale.ROOT) }
     }
 
     fun resolveAppByName(
@@ -78,7 +78,7 @@ class PackageResolver @Inject constructor(
         val prefixMatches = installedApps.filter { app ->
             val labelLower = app.appLabel.lowercase(Locale.ROOT)
             labelLower.startsWith(cleanQuery) ||
-                labelLower.split(Regex("[\\\\s_-]+")).any { token -> token == cleanQuery }
+                labelLower.split(Regex("[\\s_-]+")).any { token -> token == cleanQuery }
         }
         if (prefixMatches.size == 1) {
             return AppResolutionResult.ExactOrSingleMatch(prefixMatches.first())
