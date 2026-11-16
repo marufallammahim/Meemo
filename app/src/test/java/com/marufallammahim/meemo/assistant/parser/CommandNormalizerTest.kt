@@ -92,7 +92,7 @@ class CommandNormalizerTest {
     @Test
     fun `converts every Bengali numeral while preserving other characters`() {
         assertEquals(
-            "0123456789 - ৫০%",
+            "0123456789 - 50%",
             languageResolver.convertBengaliDigitsToAscii("০১২৩৪৫৬৭৮৯ - ৫০%")
         )
     }
