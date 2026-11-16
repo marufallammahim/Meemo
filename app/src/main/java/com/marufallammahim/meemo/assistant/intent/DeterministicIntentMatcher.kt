@@ -202,7 +202,7 @@ class DeterministicIntentMatcher @Inject constructor() {
                 // Only match if settings or a protected connectivity toggle (wifi/bluetooth/accessibility) is explicitly named
                 Regex("^(open|go to|show|launch|turn on|turn off|enable|disable)\\s+(the\\s+)?((wifi|wi-fi|bluetooth|accessibility|notification access)(\\s+settings)?|(display|sound|system|device|app)?\\s*settings)$")
             },
-            Regex("^(ওয়াইফাই|ব্লুটুথ|সেটিংস|ডিসপ্লে সেটিংস|সাউন্ড সেটিংস|অ্যাক্সেসিবিলিটি সেটিংস)\\s*(খোলো|চালু করো|বন্ধ করো|দেখাও)$")
+            Regex("^(ওয়াইফাই|ব্লুটুথ|সেটিংস|ডিসপ্লে সেটিংস|সাউন্ড সেটিংস|অ্যাক্সেসিবিলিটি সেটিংস|নোটিফিকেশন সেটিংস|নোটিফিকেশন অ্যাক্সেস)\\s*(খোলো|চালু করো|বন্ধ করো|দেখাও)$")
         )
 
         private val OPEN_APP_PATTERNS = listOf(
