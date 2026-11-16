@@ -8,6 +8,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.util.Locale
 
 class EntityExtractorTest {
 
@@ -95,6 +96,24 @@ class EntityExtractorTest {
         assertEquals(SettingsTarget.WIFI_SETTINGS, entity.target)
         assertTrue(entity.isDirectToggleAttempt)
     }
+
+    @Test
+    fun `extracts Wi-Fi settings regardless of device locale`() {
+        val previousLocale = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"))
+            val command = normalizer.normalize("Open WIFI settings")
+            val entity = extractor.extract(
+                command,
+                MeemoIntent.OPEN_SETTINGS
+            ) as ExtractedEntity.SettingsDestination
+
+            assertEquals(SettingsTarget.WIFI_SETTINGS, entity.target)
+        } finally {
+            Locale.setDefault(previousLocale)
+        }
+    }
+
     @Test
     fun `extracts English automation routine names`() {
         val cases = listOf(
