@@ -12,7 +12,7 @@ class PackageResolverTest {
     private val resolver = PackageResolver(mockk<Context>(relaxed = true))
 
     @Test
-    fun \`matches app names consistently under Turkish default locale\`() {
+    fun `matches app names consistently under Turkish default locale`() {
         val previousLocale = Locale.getDefault()
         try {
             Locale.setDefault(Locale.forLanguageTag("tr-TR"))
@@ -32,7 +32,7 @@ class PackageResolverTest {
     }
 
     @Test
-    fun \`matches app label tokens separated by repeated whitespace and punctuation\`() {
+    fun `matches app label tokens separated by repeated whitespace and punctuation`() {
         val app = InstalledAppInfo("com.example.music", "My   Music_Player")
         val result = resolver.resolveAppByName("music", listOf(app))
 
