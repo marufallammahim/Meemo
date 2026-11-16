@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import com.marufallammahim.meemo.domain.model.InstalledAppInfo
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -57,14 +58,14 @@ class PackageResolver @Inject constructor(
         query: String,
         installedApps: List<InstalledAppInfo> = getLaunchableApps()
     ): AppResolutionResult {
-        val cleanQuery = query.trim().lowercase()
+        val cleanQuery = query.trim().lowercase(Locale.ROOT)
         if (cleanQuery.isEmpty() || installedApps.isEmpty()) {
             return AppResolutionResult.NotFound
         }
 
         // 1. Exact label or package match
         val exactMatches = installedApps.filter {
-            it.appLabel.lowercase() == cleanQuery || it.packageName.lowercase() == cleanQuery
+            it.appLabel.lowercase(Locale.ROOT) == cleanQuery || it.packageName.lowercase(Locale.ROOT) == cleanQuery
         }
         if (exactMatches.size == 1) {
             return AppResolutionResult.ExactOrSingleMatch(exactMatches.first())
@@ -75,9 +76,9 @@ class PackageResolver @Inject constructor(
 
         // 2. Prefix match on app label or word token
         val prefixMatches = installedApps.filter { app ->
-            val labelLower = app.appLabel.lowercase()
+            val labelLower = app.appLabel.lowercase(Locale.ROOT)
             labelLower.startsWith(cleanQuery) ||
-                labelLower.split(" ", "-", "_").any { token -> token == cleanQuery }
+                labelLower.split(Regex("[\\\\s_-]+")).any { token -> token == cleanQuery }
         }
         if (prefixMatches.size == 1) {
             return AppResolutionResult.ExactOrSingleMatch(prefixMatches.first())
@@ -89,7 +90,7 @@ class PackageResolver @Inject constructor(
         // 3. Substring match (minimum 3 characters to avoid noisy single-letter matches)
         if (cleanQuery.length >= 3) {
             val substringMatches = installedApps.filter { app ->
-                app.appLabel.lowercase().contains(cleanQuery)
+                app.appLabel.lowercase(Locale.ROOT).contains(cleanQuery)
             }
             if (substringMatches.size == 1) {
                 return AppResolutionResult.ExactOrSingleMatch(substringMatches.first())
