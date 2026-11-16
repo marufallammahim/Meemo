@@ -86,7 +86,7 @@ class MeemoTtsEngine @Inject constructor(
         }
 
         engine.language = locale
-        engine.setSpeechRate(speechRate.coerceIn(0.5f, 2.0f))
+        engine.setSpeechRate(normalizeSpeechRate(speechRate))
         val queueMode = if (flushQueue) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
         val utteranceId = UUID.randomUUID().toString()
         val result = engine.speak(text, queueMode, null, utteranceId)
@@ -107,5 +107,14 @@ class MeemoTtsEngine @Inject constructor(
         }
         tts = null
         _state.value = TtsEngineState.UNAVAILABLE
+    }
+
+    companion object {
+        internal fun normalizeSpeechRate(value: Float): Float =
+            if (value.isFinite()) value.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE) else DEFAULT_SPEECH_RATE
+
+        private const val MIN_SPEECH_RATE = 0.5f
+        private const val MAX_SPEECH_RATE = 2.0f
+        private const val DEFAULT_SPEECH_RATE = 1.0f
     }
 }
