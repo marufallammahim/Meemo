@@ -108,6 +108,12 @@ class DeterministicIntentMatcherTest {
     }
 
     @Test
+    fun `returns UNKNOWN for empty and whitespace-only commands`() {
+        assertEquals(MeemoIntent.UNKNOWN, matcher.matchIntent(normalizer.normalize("")).intent)
+        assertEquals(MeemoIntent.UNKNOWN, matcher.matchIntent(normalizer.normalize("   ")).intent)
+    }
+
+    @Test
     fun `returns UNKNOWN for unrelated conversational chatter`() {
         val unknown = matcher.matchIntent(normalizer.normalize("Write me a 500 word poem about clouds"))
         assertEquals(MeemoIntent.UNKNOWN, unknown.intent)
