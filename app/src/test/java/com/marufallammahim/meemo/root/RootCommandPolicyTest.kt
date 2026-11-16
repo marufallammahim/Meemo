@@ -74,4 +74,14 @@ class RootCommandPolicyTest {
         )
     }
 
+    @Test
+    fun `enforces the maximum package parameter length`() {
+        val maximumLengthPackage = "a." + "b".repeat(60)
+        val overLimitPackage = "a." + "b".repeat(61)
+
+        assertEquals(62, maximumLengthPackage.length)
+        assertTrue(policy.isCommandAllowed("ROOT_PACKAGE_PATH_CHECK", maximumLengthPackage))
+        assertFalse(policy.isCommandAllowed("ROOT_PACKAGE_PATH_CHECK", overLimitPackage))
+    }
+
 }
