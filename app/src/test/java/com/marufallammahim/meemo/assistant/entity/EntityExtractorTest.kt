@@ -51,6 +51,13 @@ class EntityExtractorTest {
     }
 
     @Test
+    fun `extracts Bengali notification settings destination`() {
+        val command = normalizer.normalize("নোটিফিকেশন সেটিংস খোলো")
+        val entity = extractor.extract(command, MeemoIntent.OPEN_SETTINGS) as ExtractedEntity.SettingsDestination
+        assertEquals(SettingsTarget.NOTIFICATION_LISTENER_SETTINGS, entity.target)
+    }
+
+    @Test
     fun `marks direct Wi-Fi toggle as settings fallback`() {
         val cmd = normalizer.normalize("Turn on Wi-Fi")
         val entity = extractor.extract(cmd, MeemoIntent.OPEN_SETTINGS) as ExtractedEntity.SettingsDestination
