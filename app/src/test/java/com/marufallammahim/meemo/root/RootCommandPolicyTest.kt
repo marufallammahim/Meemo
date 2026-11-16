@@ -33,6 +33,13 @@ class RootCommandPolicyTest {
     }
 
     @Test
+    fun `rejects malformed package identifiers for root package lookup`() {
+        listOf(".", "..", "com..app", "com.app.", "com.-app", "com.").forEach { invalidPackage ->
+            assertFalse(policy.isCommandAllowed("ROOT_PACKAGE_PATH_CHECK", invalidPackage))
+        }
+    }
+
+    @Test
     fun `rejects unregistered command IDs and shell injection attempts`() {
         assertFalse(policy.isCommandAllowed("RM_RF_SYSTEM", null))
         assertFalse(policy.isCommandAllowed("ROOT_PACKAGE_PATH_CHECK", "com.app; rm -rf /"))
