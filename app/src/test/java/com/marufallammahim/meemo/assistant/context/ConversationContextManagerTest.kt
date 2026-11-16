@@ -53,4 +53,18 @@ class ConversationContextManagerTest {
         assertFalse(manager.isDuplicateSubmission(" "))
         assertFalse(manager.isDuplicateSubmission(""))
     }
+
+    @Test
+    fun `suppresses duplicate at exact debounce window boundary`() {
+        val time = FakeTimeProvider()
+        val manager = ConversationContextManager(time)
+
+        assertFalse(manager.isDuplicateSubmission("open camera"))
+        time.now += ConversationContextManager.DUPLICATE_DEBOUNCE_WINDOW_MS
+        assertTrue(manager.isDuplicateSubmission("open camera"))
+        time.now += 1L
+        assertFalse(manager.isDuplicateSubmission("open camera"))
+    }
+
+
 }
