@@ -43,6 +43,21 @@ class EntityExtractorTest {
     }
 
     @Test
+    fun `extracts the requested volume stream`() {
+        val cases = listOf(
+            "set ring volume to 40 percent" to "RING",
+            "set alarm volume to 25 percent" to "ALARM",
+            "set volume to 60 percent" to "MUSIC"
+        )
+
+        cases.forEach { (input, expectedStream) ->
+            val command = normalizer.normalize(input)
+            val entity = extractor.extract(command, MeemoIntent.SET_VOLUME) as ExtractedEntity.VolumePercentage
+            assertEquals(expectedStream, entity.streamName)
+        }
+    }
+
+    @Test
     fun `extracts all supported volume adjustment directions`() {
         val cases = listOf(
             "volume up" to VolumeDirection.UP,
