@@ -37,6 +37,25 @@ class NotificationPrivacyAndPolicyTest {
     }
 
     @Test
+    fun `allows identical notification again after duplicate window boundary`() {
+        val policy = NotificationPolicy(fakeTime)
+
+        assertFalse(policy.isDuplicateWithinWindow("com.whatsapp", "same message"))
+        currentMillis += NotificationPolicy.DUPLICATE_WINDOW_MS
+        assertTrue(policy.isDuplicateWithinWindow("com.whatsapp", "same message"))
+        currentMillis += 1L
+        assertFalse(policy.isDuplicateWithinWindow("com.whatsapp", "same message"))
+    }
+
+    @Test
+    fun `does not treat same notification text from different apps as duplicate`() {
+        val policy = NotificationPolicy(fakeTime)
+
+        assertFalse(policy.isDuplicateWithinWindow("com.whatsapp", "Hello"))
+        assertFalse(policy.isDuplicateWithinWindow("com.telegram.messenger", "Hello"))
+    }
+
+    @Test
     fun `blocks notifications during overnight quiet hours and from non-allowlisted apps`() {
         val policy = NotificationPolicy(fakeTime)
         val prefs = UserPreferences(
