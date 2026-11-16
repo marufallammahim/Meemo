@@ -178,4 +178,27 @@ class NotificationPrivacyAndPolicyTest {
         )
     }
 
+
+    @Test
+    fun `daytime quiet hours include start and exclude end boundaries`() {
+        val policy = NotificationPolicy(fakeTime)
+        val prefs = UserPreferences(
+            notificationReadAloudEnabled = true,
+            allowedNotificationPackages = setOf("com.whatsapp"),
+            quietHoursEnabled = true,
+            quietHoursStartHour = 9,
+            quietHoursEndHour = 17
+        )
+
+        currentHour = 8
+        assertFalse(policy.isWithinQuietHours(prefs))
+        currentHour = 9
+        assertTrue(policy.isWithinQuietHours(prefs))
+        currentHour = 16
+        assertTrue(policy.isWithinQuietHours(prefs))
+        currentHour = 17
+        assertFalse(policy.isWithinQuietHours(prefs))
+    }
+
+
 }
