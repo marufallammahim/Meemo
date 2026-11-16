@@ -160,4 +160,21 @@ class EntityExtractorTest {
     }
 
 
+
+    @Test
+    fun `extracts Bengali alias trigger and target app`() {
+        val command = normalizer.normalize("যখন আমি বলব কাজ তখন ফায়ারফক্স খোলো")
+        val entity = extractor.extract(command, MeemoIntent.CREATE_ALIAS) as ExtractedEntity.AliasDefinition
+
+        assertEquals("কাজ", entity.triggerPhrase)
+        assertEquals("ফায়ারফক্স", entity.targetAppName)
+    }
+
+    @Test
+    fun `returns no alias entity for incomplete alias definition`() {
+        val command = normalizer.normalize("create alias work browser")
+        assertEquals(ExtractedEntity.None, extractor.extract(command, MeemoIntent.CREATE_ALIAS))
+    }
+
+
 }
