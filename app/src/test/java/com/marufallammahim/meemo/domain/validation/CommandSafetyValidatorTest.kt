@@ -1,6 +1,7 @@
 package com.marufallammahim.meemo.domain.validation
 
 import com.marufallammahim.meemo.actions.MeemoAction
+import com.marufallammahim.meemo.data.remote.AiStructuredInterpretation
 import com.marufallammahim.meemo.root.RootCommandPolicy
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -41,4 +42,48 @@ class CommandSafetyValidatorTest {
             ).isSuccess
         )
     }
+
+    @Test
+    fun `rejects non finite and out of range AI confidence`() {
+        val invalidScores = listOf(
+            Float.NaN,
+            Float.POSITIVE_INFINITY,
+            Float.NEGATIVE_INFINITY,
+            1.01f,
+            -0.01f
+        )
+
+        invalidScores.forEach { score ->
+            assertFalse(
+                "Expected confidence $score to be rejected",
+                validator.validateAiInterpretation(
+                    AiStructuredInterpretation(
+                        intentName = "GET_BATTERY_STATUS",
+                        confidence = score
+                    )
+                ).isSuccess
+            )
+        }
+    }
+
+    @Test
+    fun `accepts AI confidence at supported threshold and maximum`() {
+        assertTrue(
+            validator.validateAiInterpretation(
+                AiStructuredInterpretation(
+                    intentName = "GET_BATTERY_STATUS",
+                    confidence = CommandSafetyValidator.MIN_AI_CONFIDENCE
+                )
+            ).isSuccess
+        )
+        assertTrue(
+            validator.validateAiInterpretation(
+                AiStructuredInterpretation(
+                    intentName = "GET_BATTERY_STATUS",
+                    confidence = CommandSafetyValidator.MAX_AI_CONFIDENCE
+                )
+            ).isSuccess
+        )
+    }
+
 }
