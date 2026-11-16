@@ -108,7 +108,9 @@ class SpeechRecognizerController @Inject constructor(
         override fun onBufferReceived(buffer: ByteArray?) {}
 
         override fun onEndOfSpeech() {
-            isSessionActive.set(false)
+            // Keep the session active until onResults or onError arrives.
+            // Releasing the guard here allows a second recognizer to start while
+            // the first session is still finalizing its transcript.
         }
 
         override fun onError(error: Int) {
