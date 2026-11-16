@@ -18,7 +18,7 @@ class CommandSafetyValidator @Inject constructor(
     private val rootCommandPolicy: RootCommandPolicy
 ) {
     fun validateAiInterpretation(interpretation: AiStructuredInterpretation): ResultWrapper<MeemoIntent> {
-        if (interpretation.confidence < MIN_AI_CONFIDENCE) {
+        if (!interpretation.confidence.isFinite() || interpretation.confidence !in MIN_AI_CONFIDENCE..MAX_AI_CONFIDENCE) {
             return ResultWrapper.Failure(
                 MeemoError.UnrecognizedCommand("AI confidence too low (${interpretation.confidence})")
             )
@@ -68,6 +68,7 @@ class CommandSafetyValidator @Inject constructor(
 
     companion object {
         const val MIN_AI_CONFIDENCE = 0.70f
+        const val MAX_AI_CONFIDENCE = 1.0f
         private val SHELL_METACHAR_REGEX = Regex("[;|&`$><\\n\\r]")
     }
 }
