@@ -80,4 +80,22 @@ class CommandNormalizerTest {
         val result = normalizer.normalize("   ...   ")
         assertEquals("", result.normalizedText)
     }
+
+    @Test
+    fun `detects Banglish markers as whole words`() {
+        assertEquals(DetectedLanguage.MIXED_BANGLISH, languageResolver.detectLanguage("volume komao"))
+        assertEquals(DetectedLanguage.ENGLISH, languageResolver.detectLanguage("the word kholona is not a command marker"))
+        assertEquals(DetectedLanguage.BENGALI, languageResolver.detectLanguage("শুধু বাংলা"))
+        assertEquals(DetectedLanguage.MIXED_BANGLISH, languageResolver.detectLanguage("বাংলা with English"))
+    }
+
+    @Test
+    fun `converts every Bengali numeral while preserving other characters`() {
+        assertEquals(
+            "0123456789 - ৫০%",
+            languageResolver.convertBengaliDigitsToAscii("০১২৩৪৫৬৭৮৯ - ৫০%")
+        )
+    }
+
+
 }
