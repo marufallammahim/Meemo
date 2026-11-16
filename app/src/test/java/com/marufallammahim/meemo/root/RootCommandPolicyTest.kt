@@ -67,11 +67,8 @@ class RootCommandPolicyTest {
 
     @Test
     fun `does not append an empty package parameter to root command`() {
-        assertTrue(policy.isCommandAllowed("ROOT_PACKAGE_PATH_CHECK", ""))
-        assertEquals(
-            "/system/bin/pm path",
-            policy.buildSafeCommandString("ROOT_PACKAGE_PATH_CHECK", "")
-        )
+        assertFalse(policy.isCommandAllowed("ROOT_PACKAGE_PATH_CHECK", ""))
+        assertNull(policy.buildSafeCommandString("ROOT_PACKAGE_PATH_CHECK", ""))
     }
 
     @Test
