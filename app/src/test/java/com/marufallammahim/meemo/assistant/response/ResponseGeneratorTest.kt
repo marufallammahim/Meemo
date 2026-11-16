@@ -59,6 +59,24 @@ class ResponseGeneratorTest {
     }
 
     @Test
+    fun `localizes partial success summary and reason`() {
+        val result = ActionResult.PartialSuccess(
+            summaryEn = "Settings opened.",
+            summaryBn = "সেটিংস খোলা হয়েছে।",
+            reasonEn = "Complete the change manually.",
+            reasonBn = "পরিবর্তনটি নিজে সম্পন্ন করুন।"
+        )
+
+        val english = generator.generate(result, AppLanguageMode.ENGLISH, DetectedLanguage.BENGALI)
+        val bengali = generator.generate(result, AppLanguageMode.BENGALI, DetectedLanguage.ENGLISH)
+
+        assertEquals("Settings opened. (Complete the change manually.)", english.displayBody)
+        assertEquals("সেটিংস খোলা হয়েছে। (পরিবর্তনটি নিজে সম্পন্ন করুন।)", bengali.displayBody)
+        assertEquals("SETTINGS_OPENED", bengali.outcomeBadge)
+        assertFalse(bengali.isError)
+    }
+
+    @Test
     fun `cancelled response does not produce spoken output`() {
         val response = generator.generate(
             ActionResult.Cancelled(messageEn = "Cancelled.", messageBn = "বাতিল হয়েছে।"),
