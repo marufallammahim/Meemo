@@ -1,0 +1,40 @@
+# Gradle
+.gradle/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Local Android SDK configuration
+local.properties
+
+# Signing material and local secrets
+*.jks
+*.keystore
+keystore.properties
+secrets.properties
+.env
+.env.*
+!.env.example
+
+# Kotlin / Java tooling
+.kotlin/
+*.hprof
+
+# Android build outputs and captures
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
