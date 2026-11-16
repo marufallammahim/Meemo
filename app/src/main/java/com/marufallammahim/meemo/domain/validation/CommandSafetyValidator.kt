@@ -18,9 +18,12 @@ class CommandSafetyValidator @Inject constructor(
     private val rootCommandPolicy: RootCommandPolicy
 ) {
     fun validateAiInterpretation(interpretation: AiStructuredInterpretation): ResultWrapper<MeemoIntent> {
-        if (!interpretation.confidence.isFinite() || interpretation.confidence !in MIN_AI_CONFIDENCE..MAX_AI_CONFIDENCE) {
+        if (
+            !interpretation.confidence.isFinite() ||
+            interpretation.confidence !in MIN_AI_CONFIDENCE..MAX_AI_CONFIDENCE
+        ) {
             return ResultWrapper.Failure(
-                MeemoError.UnrecognizedCommand("AI confidence too low (${interpretation.confidence})")
+                MeemoError.UnrecognizedCommand("AI confidence outside supported range (${interpretation.confidence})")
             )
         }
         val intent = MeemoIntent.fromNameOrUnknown(interpretation.intentName)
