@@ -95,4 +95,26 @@ class EntityExtractorTest {
         assertEquals(SettingsTarget.WIFI_SETTINGS, entity.target)
         assertTrue(entity.isDirectToggleAttempt)
     }
+    @Test
+    fun `extracts English automation routine names`() {
+        val cases = listOf(
+            "run routine Night Mode" to "Night Mode",
+            "execute automation Morning Briefing" to "Morning Briefing",
+            "start routine Focus Time" to "Focus Time"
+        )
+
+        cases.forEach { (input, expectedName) ->
+            val command = normalizer.normalize(input)
+            val entity = extractor.extract(command, MeemoIntent.RUN_AUTOMATION) as ExtractedEntity.AutomationTrigger
+            assertEquals(expectedName, entity.routineName)
+        }
+    }
+
+    @Test
+    fun `extracts Bengali automation routine names`() {
+        val command = normalizer.normalize("রুটিন চালু করো রাতের মোড")
+        val entity = extractor.extract(command, MeemoIntent.RUN_AUTOMATION) as ExtractedEntity.AutomationTrigger
+        assertEquals("রাতের মোড", entity.routineName)
+    }
+
 }
