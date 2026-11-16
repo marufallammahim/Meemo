@@ -59,6 +59,9 @@ class SafeLogger @Inject constructor() {
         private val EMAIL_REGEX = Regex("[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}")
         private val NOTIFICATION_BODY_REGEX = Regex("(?i)notification_body=\\[.*?\\]")
 
+        private val BANGLADESH_PHONE_REGEX = Regex("(?<!\\d)(?:\\+?8801|01)[3-9]\\d{8}(?!\\d)")
+        private val INTERNATIONAL_PHONE_REGEX = Regex("(?<!\\d)\\+[1-9]\\d{7,14}(?!\\d)")
+
         fun redactSensitiveContent(input: String): String {
             return input
                 .replace(BEARER_REGEX, "Bearer [REDACTED_TOKEN]")
