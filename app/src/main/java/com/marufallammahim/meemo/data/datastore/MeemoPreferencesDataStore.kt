@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
-
 internal fun normalizeStoredSpeechRate(rate: Float): Float =
     if (rate.isFinite()) rate.coerceIn(0.5f, 2.0f) else 1.0f
 
