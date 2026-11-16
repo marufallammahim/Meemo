@@ -135,4 +135,29 @@ class EntityExtractorTest {
     }
 
 
+
+    @Test
+    fun `extracts Bengali Bluetooth and display settings destinations`() {
+        val cases = listOf(
+            "ব্লুটুথ সেটিংস খোলো" to SettingsTarget.BLUETOOTH_SETTINGS,
+            "ডিসপ্লে সেটিংস খোলো" to SettingsTarget.DISPLAY_SETTINGS
+        )
+
+        cases.forEach { (input, expectedTarget) ->
+            val command = normalizer.normalize(input)
+            val entity = extractor.extract(command, MeemoIntent.OPEN_SETTINGS) as ExtractedEntity.SettingsDestination
+            assertEquals(expectedTarget, entity.target)
+        }
+    }
+
+    @Test
+    fun `marks Bengali direct toggle attempts as settings fallbacks`() {
+        val command = normalizer.normalize("ব্লুটুথ বন্ধ করো")
+        val entity = extractor.extract(command, MeemoIntent.OPEN_SETTINGS) as ExtractedEntity.SettingsDestination
+
+        assertEquals(SettingsTarget.BLUETOOTH_SETTINGS, entity.target)
+        assertTrue(entity.isDirectToggleAttempt)
+    }
+
+
 }
