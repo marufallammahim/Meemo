@@ -138,4 +138,44 @@ class NotificationPrivacyAndPolicyTest {
         assertFalse(policy.isWithinQuietHours(prefs))
     }
 
+    @Test
+    fun `formats full notification announcements in both languages`() {
+        val policy = NotificationPolicy(fakeTime)
+        val item = TransientNotificationItem(
+            packageName = "com.whatsapp",
+            appDisplayName = "WhatsApp",
+            senderOrTitle = "Alice",
+            messageBody = "See you soon",
+            isContentRedactedBySystem = false,
+            receivedAtMs = currentMillis
+        )
+
+        assertEquals(
+            "New message on WhatsApp from Alice. It says: See you soon",
+            policy.formatSpokenAnnouncement(item, announceSenderOnly = false, useBengali = false)
+        )
+        assertEquals(
+            "WhatsApp-এ Alice লিখেছেন: See you soon",
+            policy.formatSpokenAnnouncement(item, announceSenderOnly = false, useBengali = true)
+        )
+    }
+
+    @Test
+    fun `blank notification body falls back to app level announcement`() {
+        val policy = NotificationPolicy(fakeTime)
+        val item = TransientNotificationItem(
+            packageName = "com.whatsapp",
+            appDisplayName = "WhatsApp",
+            senderOrTitle = "Alice",
+            messageBody = "   ",
+            isContentRedactedBySystem = false,
+            receivedAtMs = currentMillis
+        )
+
+        assertEquals(
+            "New notification from WhatsApp.",
+            policy.formatSpokenAnnouncement(item, announceSenderOnly = false, useBengali = false)
+        )
+    }
+
 }
