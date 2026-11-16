@@ -48,4 +48,30 @@ class RootCommandPolicyTest {
         assertFalse(policy.isCommandAllowed("ROOT_PACKAGE_PATH_CHECK", "\\$(whoami)"))
         assertNull(policy.buildSafeCommandString("ROOT_PACKAGE_PATH_CHECK", "com.app; id"))
     }
+
+    @Test
+    fun `allows the thermal diagnostic command without arguments`() {
+        assertTrue(policy.isCommandAllowed("ROOT_THERMAL_STATUS", null))
+        assertEquals(
+            "/system/bin/dumpsys thermalservice",
+            policy.buildSafeCommandString("ROOT_THERMAL_STATUS", null)
+        )
+    }
+
+    @Test
+    fun `rejects parameters for static diagnostic commands`() {
+        assertFalse(policy.isCommandAllowed("ROOT_BATTERY_STATS_DUMP", "battery"))
+        assertFalse(policy.isCommandAllowed("ROOT_THERMAL_STATUS", "thermalservice"))
+        assertNull(policy.buildSafeCommandString("ROOT_THERMAL_STATUS", "unexpected"))
+    }
+
+    @Test
+    fun `does not append an empty package parameter to root command`() {
+        assertTrue(policy.isCommandAllowed("ROOT_PACKAGE_PATH_CHECK", ""))
+        assertEquals(
+            "/system/bin/pm path",
+            policy.buildSafeCommandString("ROOT_PACKAGE_PATH_CHECK", "")
+        )
+    }
+
 }
