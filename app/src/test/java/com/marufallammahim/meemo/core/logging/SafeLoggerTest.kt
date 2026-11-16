@@ -2,7 +2,6 @@ package com.marufallammahim.meemo.core.logging
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SafeLoggerTest {
@@ -17,7 +16,7 @@ class SafeLoggerTest {
 
         assertFalse(result.contains("01712345678"))
         assertFalse(result.contains("+14155552671"))
-        assertEquals(2, Regex("\\\\[REDACTED_PHONE]").findAll(result).count())
+        assertEquals(2, Regex("\\[REDACTED_PHONE]").findAll(result).count())
     }
 
     @Test
