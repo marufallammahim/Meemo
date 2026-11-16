@@ -19,6 +19,9 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
+internal fun normalizeStoredSpeechRate(rate: Float): Float =
+    if (rate.isFinite()) rate.coerceIn(0.5f, 2.0f) else 1.0f
+
 private val Context.meemoDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "meemo_user_preferences"
 )
@@ -33,7 +36,7 @@ class MeemoPreferencesDataStore @Inject constructor(
             themeMode = AppThemeMode.fromName(prefs[KEY_THEME_MODE]),
             languageMode = AppLanguageMode.fromName(prefs[KEY_LANGUAGE_MODE]),
             ttsEnabled = prefs[KEY_TTS_ENABLED] ?: true,
-            ttsSpeechRate = prefs[KEY_TTS_RATE] ?: 1.0f,
+            ttsSpeechRate = normalizeStoredSpeechRate(prefs[KEY_TTS_RATE] ?: 1.0f),
             saveConversationHistory = prefs[KEY_SAVE_HISTORY] ?: true,
             wakeWordEnabled = prefs[KEY_WAKE_WORD_ENABLED] ?: false,
             notificationReadAloudEnabled = prefs[KEY_NOTIF_READ_ALOUD] ?: false,
@@ -67,7 +70,7 @@ class MeemoPreferencesDataStore @Inject constructor(
     }
 
     suspend fun setTtsSpeechRate(rate: Float) {
-        context.meemoDataStore.edit { it[KEY_TTS_RATE] = rate.coerceIn(0.5f, 2.0f) }
+        context.meemoDataStore.edit { it[KEY_TTS_RATE] = normalizeStoredSpeechRate(rate) }
     }
 
     suspend fun setSaveConversationHistory(enabled: Boolean) {
