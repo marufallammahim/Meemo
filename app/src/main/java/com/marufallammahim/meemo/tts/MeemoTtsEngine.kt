@@ -108,6 +108,7 @@ class MeemoTtsEngine @Inject constructor(
         tts = null
         _state.value = TtsEngineState.UNAVAILABLE
     }
+
     companion object {
         internal fun normalizeSpeechRate(value: Float): Float =
             if (value.isFinite()) value.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE) else DEFAULT_SPEECH_RATE
@@ -116,5 +117,4 @@ class MeemoTtsEngine @Inject constructor(
         private const val MAX_SPEECH_RATE = 2.0f
         private const val DEFAULT_SPEECH_RATE = 1.0f
     }
-
 }
