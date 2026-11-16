@@ -43,6 +43,22 @@ class EntityExtractorTest {
     }
 
     @Test
+    fun `extracts all supported volume adjustment directions`() {
+        val cases = listOf(
+            "volume up" to VolumeDirection.UP,
+            "volume down" to VolumeDirection.DOWN,
+            "mute" to VolumeDirection.MUTE,
+            "unmute" to VolumeDirection.UNMUTE
+        )
+
+        cases.forEach { (input, expected) ->
+            val command = normalizer.normalize(input)
+            val entity = extractor.extract(command, MeemoIntent.ADJUST_VOLUME) as ExtractedEntity.VolumeAdjustment
+            assertEquals(expected, entity.direction)
+        }
+    }
+
+    @Test
     fun `extracts alias trigger and target app`() {
         val cmd = normalizer.normalize("Whenever I say work browser open Firefox")
         val entity = extractor.extract(cmd, MeemoIntent.CREATE_ALIAS) as ExtractedEntity.AliasDefinition
