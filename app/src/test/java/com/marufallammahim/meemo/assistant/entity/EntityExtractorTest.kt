@@ -117,4 +117,22 @@ class EntityExtractorTest {
         assertEquals("রাতের মোড", entity.routineName)
     }
 
+
+    @Test
+    fun `extracts supported settings destinations from English commands`() {
+        val cases = listOf(
+            "open Bluetooth settings" to SettingsTarget.BLUETOOTH_SETTINGS,
+            "open display settings" to SettingsTarget.DISPLAY_SETTINGS,
+            "open sound settings" to SettingsTarget.SOUND_SETTINGS,
+            "open accessibility settings" to SettingsTarget.ACCESSIBILITY_SETTINGS
+        )
+
+        cases.forEach { (input, expectedTarget) ->
+            val command = normalizer.normalize(input)
+            val entity = extractor.extract(command, MeemoIntent.OPEN_SETTINGS) as ExtractedEntity.SettingsDestination
+            assertEquals(expectedTarget, entity.target)
+        }
+    }
+
+
 }
