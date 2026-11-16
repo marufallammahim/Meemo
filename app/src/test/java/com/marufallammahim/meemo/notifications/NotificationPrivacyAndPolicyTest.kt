@@ -55,6 +55,27 @@ class NotificationPrivacyAndPolicyTest {
     }
 
     @Test
+    fun `sender only mode never includes message body in spoken announcement`() {
+        val policy = NotificationPolicy(fakeTime)
+        val item = TransientNotificationItem(
+            packageName = "com.whatsapp",
+            appDisplayName = "WhatsApp",
+            senderOrTitle = "Alice",
+            messageBody = "Private message text",
+            isContentRedactedBySystem = false,
+            receivedAtMs = currentMillis
+        )
+
+        val english = policy.formatSpokenAnnouncement(item, announceSenderOnly = true, useBengali = false)
+        val bengali = policy.formatSpokenAnnouncement(item, announceSenderOnly = true, useBengali = true)
+
+        assertEquals("New notification from WhatsApp.", english)
+        assertEquals("WhatsApp থেকে নতুন নোটিফিকেশন এসেছে।", bengali)
+        assertFalse(english.contains("Private message text"))
+        assertFalse(bengali.contains("Private message text"))
+    }
+
+    @Test
     fun `redacts lockscreen secret notifications and SafeLogger sensitive tokens`() {
         val policy = NotificationPolicy(fakeTime)
         val secretItem = TransientNotificationItem(
