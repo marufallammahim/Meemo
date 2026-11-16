@@ -82,6 +82,14 @@ class DeterministicIntentMatcherTest {
             matcher.matchIntent(normalizer.normalize("গান থামাও")).intent
         )
         assertEquals(
+            MeemoIntent.MEDIA_PREVIOUS,
+            matcher.matchIntent(normalizer.normalize("previous")).intent
+        )
+        assertEquals(
+            MeemoIntent.MEDIA_PREVIOUS,
+            matcher.matchIntent(normalizer.normalize("previous song")).intent
+        )
+        assertEquals(
             MeemoIntent.OPEN_SETTINGS,
             matcher.matchIntent(normalizer.normalize("Open Wi-Fi settings")).intent
         )

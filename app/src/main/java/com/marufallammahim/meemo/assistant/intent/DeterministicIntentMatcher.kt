@@ -172,7 +172,7 @@ class DeterministicIntentMatcher @Inject constructor() {
         )
 
         private val MEDIA_PREV_PATTERNS = listOf(
-            Regex("^(previous|prev)(\\s+track|\\s+song|\\s+media)$"),
+            Regex("^(previous|prev)(\\s+track|\\s+song|\\s+media)?$"),
             Regex("^(আগের গান|পূর্ববর্তী গান)$")
         )
 
