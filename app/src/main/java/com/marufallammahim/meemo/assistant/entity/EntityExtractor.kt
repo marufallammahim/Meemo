@@ -2,6 +2,7 @@ package com.marufallammahim.meemo.assistant.entity
 
 import com.marufallammahim.meemo.assistant.command.NormalizedCommand
 import com.marufallammahim.meemo.assistant.intent.MeemoIntent
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -39,7 +40,7 @@ class EntityExtractor @Inject constructor() {
 
     fun extract(command: NormalizedCommand, intent: MeemoIntent): ExtractedEntity {
         val text = command.normalizedText.trim()
-        val lower = text.lowercase()
+        val lower = text.lowercase(Locale.ROOT)
 
         return when (intent) {
             MeemoIntent.OPEN_APPLICATION -> extractAppQuery(text)
