@@ -45,7 +45,7 @@ class RootCommandPolicy @Inject constructor() {
         val spec = approvedCommands[commandId] ?: return false
         if (optionalParam != null) {
             if (!spec.acceptsSingleSafeParameter) return false
-            if (!SAFE_PARAM_REGEX.matches(optionalParam)) return false
+            if (optionalParam.length > 64 || !PACKAGE_NAME_REGEX.matches(optionalParam)) return false
             if (FORBIDDEN_METACHARS.containsMatchIn(optionalParam)) return false
         }
         return true
@@ -63,7 +63,7 @@ class RootCommandPolicy @Inject constructor() {
     }
 
     companion object {
-        private val SAFE_PARAM_REGEX = Regex("^[a-zA-Z0-9._\\-]{1,64}$")
+        private val PACKAGE_NAME_REGEX = Regex("^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)+$")
         private val FORBIDDEN_METACHARS = Regex("[;|&`\\$><\\n\\r\\s\"\'\\\\]")
     }
 }
