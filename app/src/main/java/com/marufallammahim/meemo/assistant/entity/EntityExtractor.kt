@@ -102,7 +102,7 @@ class EntityExtractor @Inject constructor() {
                 SettingsTarget.WIFI_SETTINGS
             lower.contains("bluetooth") || lower.contains("ব্লুটুথ") ->
                 SettingsTarget.BLUETOOTH_SETTINGS
-            lower.contains("notification") ->
+            lower.contains("notification") || lower.contains("নোটিফিকেশন") ->
                 SettingsTarget.NOTIFICATION_LISTENER_SETTINGS
             lower.contains("accessibility") || lower.contains("অ্যাক্সেসিবিলিটি") ->
                 SettingsTarget.ACCESSIBILITY_SETTINGS
