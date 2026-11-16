@@ -37,13 +37,15 @@ class NotificationPrivacyAndPolicyTest {
     }
 
     @Test
-    fun `allows identical notification again after duplicate window boundary`() {
+    fun `continues suppressing repeated notifications while inside sliding window`() {
         val policy = NotificationPolicy(fakeTime)
 
         assertFalse(policy.isDuplicateWithinWindow("com.whatsapp", "same message"))
         currentMillis += NotificationPolicy.DUPLICATE_WINDOW_MS
         assertTrue(policy.isDuplicateWithinWindow("com.whatsapp", "same message"))
         currentMillis += 1L
+        assertTrue(policy.isDuplicateWithinWindow("com.whatsapp", "same message"))
+        currentMillis += NotificationPolicy.DUPLICATE_WINDOW_MS + 1L
         assertFalse(policy.isDuplicateWithinWindow("com.whatsapp", "same message"))
     }
 
