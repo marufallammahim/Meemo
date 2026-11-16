@@ -39,8 +39,8 @@ class SafeLogger @Inject constructor() {
         val entry = DiagnosticLogEntry(
             timestampMs = System.currentTimeMillis(),
             level = level,
-            tag = tag,
-            redactedMessage = clean
+            tag = tag.take(MAX_TAG_LENGTH).ifBlank { DEFAULT_LOG_TAG },
+            redactedMessage = clean.take(MAX_MESSAGE_LENGTH)
         )
         recentLogs.add(entry)
         while (recentLogs.size > MAX_LOG_ENTRIES) {
@@ -50,6 +50,9 @@ class SafeLogger @Inject constructor() {
 
     companion object {
         private const val MAX_LOG_ENTRIES = 200
+        private const val MAX_MESSAGE_LENGTH = 2_000
+        private const val MAX_TAG_LENGTH = 64
+        private const val DEFAULT_LOG_TAG = "Meemo"
 
         private val BEARER_REGEX = Regex("(?i)bearer\\s+[a-zA-Z0-9._\\-]+")
         private val API_KEY_REGEX = Regex("(?i)(sk-[a-zA-Z0-9]{8,}|api[_-]?key\\s*[:=]\\s*\\S+)")
@@ -62,6 +65,8 @@ class SafeLogger @Inject constructor() {
                 .replace(API_KEY_REGEX, "[REDACTED_API_KEY]")
                 .replace(EMAIL_REGEX, "[REDACTED_EMAIL]")
                 .replace(NOTIFICATION_BODY_REGEX, "notification_body=[REDACTED_TRANSIENT]")
+                .replace(BANGLADESH_PHONE_REGEX, "[REDACTED_PHONE]")
+                .replace(INTERNATIONAL_PHONE_REGEX, "[REDACTED_PHONE]")
         }
     }
 }
