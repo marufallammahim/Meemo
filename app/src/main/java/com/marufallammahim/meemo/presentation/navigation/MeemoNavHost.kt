@@ -40,7 +40,7 @@ import com.marufallammahim.meemo.presentation.screens.SettingsViewModel
 @Composable
 fun MeemoNavHost(
     onboardingCompleted: Boolean,
-    onRequestMicPermission: () -> Unit,
+    onRequestMicPermission: (onResult: (Boolean) -> Unit) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
