@@ -117,4 +117,25 @@ class NotificationPrivacyAndPolicyTest {
         assertFalse(redactedLog.contains("Private text"))
         assertTrue(redactedLog.contains("[REDACTED_TOKEN]"))
     }
+    @Test
+    fun `overnight quiet hours include start and exclude end boundaries`() {
+        val policy = NotificationPolicy(fakeTime)
+        val prefs = UserPreferences(
+            notificationReadAloudEnabled = true,
+            allowedNotificationPackages = setOf("com.whatsapp"),
+            quietHoursEnabled = true,
+            quietHoursStartHour = 23,
+            quietHoursEndHour = 7
+        )
+
+        currentHour = 22
+        assertFalse(policy.isWithinQuietHours(prefs))
+        currentHour = 23
+        assertTrue(policy.isWithinQuietHours(prefs))
+        currentHour = 6
+        assertTrue(policy.isWithinQuietHours(prefs))
+        currentHour = 7
+        assertFalse(policy.isWithinQuietHours(prefs))
+    }
+
 }
