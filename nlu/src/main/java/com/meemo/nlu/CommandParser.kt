@@ -12,8 +12,8 @@ class CommandParser(
 ) : CommandParserPort {
     override fun parse(rawText: String, source: InputSource): Command {
         val normalized = synonyms.canonicalize(normalizer.normalize(rawText))
-        entityExtractor.extract(normalized)
-        val match = matcher.match(normalized)
+        val entities = entityExtractor.extract(normalized)
+        val match = matcher.match(normalized, entities)
         return Command(rawText, normalized, match.intent, match.confidence, source)
     }
 }
