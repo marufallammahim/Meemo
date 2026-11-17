@@ -8,6 +8,7 @@ import okio.Buffer
 import okio.BufferedSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OpenAiCompatibleClientResponseBodyTest {
@@ -30,7 +31,7 @@ class OpenAiCompatibleClientResponseBodyTest {
     @Test
     fun `enforces the limit using UTF-8 bytes rather than character count`() {
         val text = "বাংলা".repeat(2_200)
-        assert(text.length < MAX_AI_RESPONSE_BYTES)
+        assertTrue(text.length < MAX_AI_RESPONSE_BYTES)
         val body = text.toResponseBody("text/plain".toMediaType())
 
         assertNull(readBoundedResponseBody(body))
