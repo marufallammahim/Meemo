@@ -14,14 +14,19 @@ class ProcessCommandUseCase(
 ) {
     suspend operator fun invoke(rawText: String, source: InputSource = InputSource.TEXT): ProcessCommandResult {
         val command = parser.parse(rawText, source)
-        val result = if (command.confidence >= 0.8f) {
-            actionExecutor.execute(command)
-        } else {
-            ActionResult.Unsupported(
-                if (command.confidence >= 0.5f) "Please rephrase or confirm what you meant."
-                else "I did not understand that command. Try “open browser”, “battery”, or “open Wi-Fi settings”."
+        val result = when {
+            command.confidence >= EXECUTION_CONFIDENCE -> actionExecutor.execute(command)
+            command.confidence >= CONFIRMATION_CONFIDENCE ->
+                ActionResult.NeedsConfirmation("Did you mean “${command.normalizedText}”?", command.intent)
+            else -> ActionResult.Unsupported(
+                "I did not understand that command. Try “open browser”, “battery”, or “open Wi-Fi settings”."
             )
         }
         return ProcessCommandResult(command, result)
+    }
+
+    private companion object {
+        const val EXECUTION_CONFIDENCE = 0.8f
+        const val CONFIRMATION_CONFIDENCE = 0.5f
     }
 }
