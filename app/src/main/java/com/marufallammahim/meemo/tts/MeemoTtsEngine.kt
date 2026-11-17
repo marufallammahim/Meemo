@@ -20,6 +20,34 @@ enum class TtsEngineState {
     UNAVAILABLE
 }
 
+internal class PendingUtteranceQueue {
+    private val pendingIds = mutableSetOf<String>()
+
+    @Synchronized
+    fun enqueue(utteranceId: String, flushQueue: Boolean) {
+        if (flushQueue) pendingIds.clear()
+        pendingIds.add(utteranceId)
+    }
+
+    @Synchronized
+    fun contains(utteranceId: String?): Boolean =
+        utteranceId != null && pendingIds.contains(utteranceId)
+
+    @Synchronized
+    fun complete(utteranceId: String?): Boolean {
+        if (utteranceId != null) pendingIds.remove(utteranceId)
+        return pendingIds.isEmpty()
+    }
+
+    @Synchronized
+    fun clear() {
+        pendingIds.clear()
+    }
+
+    @Synchronized
+    fun isEmpty(): Boolean = pendingIds.isEmpty()
+}
+
 @Singleton
 class MeemoTtsEngine @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -27,6 +55,7 @@ class MeemoTtsEngine @Inject constructor(
 ) : TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null
+    private val pendingUtterances = PendingUtteranceQueue()
     private val _state = MutableStateFlow(TtsEngineState.INITIALIZING)
     val state: StateFlow<TtsEngineState> = _state.asStateFlow()
 
@@ -42,19 +71,32 @@ class MeemoTtsEngine @Inject constructor(
         if (status == TextToSpeech.SUCCESS) {
             tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String?) {
-                    _state.value = TtsEngineState.SPEAKING
+                    if (pendingUtterances.contains(utteranceId)) {
+                        _state.value = TtsEngineState.SPEAKING
+                    }
                 }
 
                 override fun onDone(utteranceId: String?) {
-                    _state.value = TtsEngineState.READY
+                    updateStateAfterCompletion(utteranceId)
                 }
 
                 @Deprecated("Deprecated in Java")
                 override fun onError(utteranceId: String?) {
-                    _state.value = TtsEngineState.READY
+                    updateStateAfterCompletion(utteranceId)
+                }
+
+                override fun onError(utteranceId: String?, errorCode: Int) {
+                    safeLogger.warn("MeemoTtsEngine", "TTS utterance failed with error=$errorCode")
+                    updateStateAfterCompletion(utteranceId)
+                }
+
+                override fun onStop(utteranceId: String?, interrupted: Boolean) {
+                    updateStateAfterCompletion(utteranceId)
                 }
             })
-            _state.value = TtsEngineState.READY
+            if (pendingUtterances.isEmpty()) {
+                _state.value = TtsEngineState.READY
+            }
         } else {
             _state.value = TtsEngineState.UNAVAILABLE
             safeLogger.warn("MeemoTtsEngine", "TTS initialization failed with status=$status")
@@ -89,11 +131,16 @@ class MeemoTtsEngine @Inject constructor(
         engine.setSpeechRate(normalizeSpeechRate(speechRate))
         val queueMode = if (flushQueue) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
         val utteranceId = UUID.randomUUID().toString()
+        pendingUtterances.enqueue(utteranceId, flushQueue)
         val result = engine.speak(text, queueMode, null, utteranceId)
+        if (result != TextToSpeech.SUCCESS) {
+            updateStateAfterCompletion(utteranceId)
+        }
         return result == TextToSpeech.SUCCESS
     }
 
     fun stop() {
+        pendingUtterances.clear()
         runCatching { tts?.stop() }
         if (_state.value == TtsEngineState.SPEAKING) {
             _state.value = TtsEngineState.READY
@@ -101,12 +148,19 @@ class MeemoTtsEngine @Inject constructor(
     }
 
     fun shutdown() {
+        pendingUtterances.clear()
         runCatching {
             tts?.stop()
             tts?.shutdown()
         }
         tts = null
         _state.value = TtsEngineState.UNAVAILABLE
+    }
+
+    private fun updateStateAfterCompletion(utteranceId: String?) {
+        if (pendingUtterances.complete(utteranceId) && _state.value == TtsEngineState.SPEAKING) {
+            _state.value = TtsEngineState.READY
+        }
     }
 
     companion object {
