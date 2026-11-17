@@ -9,6 +9,12 @@ class EntityExtractor {
         Regex("^whenever i say (.+) open (.+)$").matchEntire(text)?.let {
             entities += CommandEntity.AliasDefinition(it.groupValues[1].trim(), it.groupValues[2].trim())
         }
+        Regex("^open (.+)$").matchEntire(text)?.let {
+            val app = it.groupValues[1].trim()
+            if (app !in setOf("browser", "web browser", "settings", "wifi settings", "bluetooth settings")) {
+                entities += CommandEntity.AppName(app)
+            }
+        }
         Regex("\\b(\\d{1,3})\\s*(?:percent|%)?\\b").findAll(text).forEach {
             it.groupValues[1].toIntOrNull()?.let { number -> entities += CommandEntity.NumberValue(number) }
         }
