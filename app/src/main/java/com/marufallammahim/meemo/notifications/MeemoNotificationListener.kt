@@ -4,6 +4,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.marufallammahim.meemo.core.logging.SafeLogger
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,15 +23,29 @@ class MeemoNotificationListener : NotificationListenerService() {
     @Inject lateinit var readAloud: NotificationReadAloud
     @Inject lateinit var safeLogger: SafeLogger
 
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        val statusBarNotification = sbn ?: return
-        val item = processor.extractTransientItem(statusBarNotification) ?: return
-        // Log only package metadata; never log notification_body
-        safeLogger.info("NotificationListener", "Processed transient notification from pkg=${item.packageName}")
+        val notification = sbn ?: return
         serviceScope.launch {
-            readAloud.handleIncomingNotification(item)
+            try {
+                // PackageManager lookups and preference access must not block the service callback thread.
+                val item = processor.extractTransientItem(notification) ?: return@launch
+                // Log only package metadata; never log notification_body.
+                safeLogger.info(
+                    "NotificationListener",
+                    "Processed transient notification from pkg=${item.packageName}"
+                )
+                readAloud.handleIncomingNotification(item)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                safeLogger.error(
+                    "NotificationListener",
+                    "Failed to process transient notification",
+                    error
+                )
+            }
         }
     }
 
