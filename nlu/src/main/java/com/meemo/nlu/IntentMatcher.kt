@@ -19,6 +19,7 @@ class IntentMatcher {
         Regex("^whenever i say (.+) open (.+)$").matchEntire(value)?.let {
             return IntentMatch(MeemoIntent.DefineAlias(it.groupValues[1].trim(), it.groupValues[2].trim()), 0.96f)
         }
+        fuzzyMatch(value)?.let { return it }
         Regex("^open (.+)$").matchEntire(value)?.let {
             val query = it.groupValues[1].trim()
             if (query.isNotEmpty() && query != "settings") return IntentMatch(MeemoIntent.OpenApp(query), 0.91f)
@@ -41,5 +42,19 @@ class IntentMatcher {
             else -> return null
         }
         return MeemoIntent.OpenSettings(page)
+    }
+
+    private fun fuzzyMatch(value: String): IntentMatch? {
+        val candidates = listOf(
+            "battery" to MeemoIntent.GetBattery,
+            "open browser" to MeemoIntent.OpenBrowser,
+            "open wifi settings" to MeemoIntent.OpenSettings(SettingsPage.WIFI),
+            "open bluetooth settings" to MeemoIntent.OpenSettings(SettingsPage.BLUETOOTH),
+            "open display settings" to MeemoIntent.OpenSettings(SettingsPage.DISPLAY),
+            "open sound settings" to MeemoIntent.OpenSettings(SettingsPage.SOUND)
+        )
+        val match = FuzzyMatcher().rank(value, candidates) { it.first }.firstOrNull() ?: return null
+        if (match.score < 0.6f || match.score >= 1f) return null
+        return IntentMatch(match.value.second, (0.6f + match.score * 0.3f).coerceAtMost(0.9f))
     }
 }
