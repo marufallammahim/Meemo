@@ -11,9 +11,28 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.ResponseBody
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+
+internal const val MAX_AI_RESPONSE_BYTES = 32_768
+
+/**
+ * Reads at most [maxBytes] plus one byte before rejecting an oversized response.
+ * A missing Content-Length header therefore cannot cause an unbounded body allocation.
+ */
+internal fun readBoundedResponseBody(
+    responseBody: ResponseBody,
+    maxBytes: Int = MAX_AI_RESPONSE_BYTES
+): String? {
+    require(maxBytes >= 0)
+    if (responseBody.contentLength() > maxBytes.toLong()) return null
+
+    val source = responseBody.source()
+    if (source.request(maxBytes.toLong() + 1L)) return null
+    return source.readUtf8()
+}
 
 @Serializable
 data class AiStructuredInterpretation(
@@ -114,12 +133,12 @@ class OpenAiCompatibleClient @Inject constructor(
                         MeemoError.AiProviderFailure("HTTP status ${response.code}")
                     )
                 }
-                val rawBody = response.body?.string().orEmpty()
-                if (rawBody.length > 32_768) {
-                    return ResultWrapper.Failure(
+                val responseBody = response.body
+                    ?: return ResultWrapper.Failure(MeemoError.AiProviderFailure("Empty response body"))
+                val rawBody = readBoundedResponseBody(responseBody)
+                    ?: return ResultWrapper.Failure(
                         MeemoError.AiProviderFailure("Response exceeded safety size limit")
                     )
-                }
                 val parsedResponse = json.decodeFromString(ChatCompletionResponse.serializer(), rawBody)
                 val assistantJson = parsedResponse.choices.firstOrNull()?.message?.content?.trim().orEmpty()
                 val interpretation = json.decodeFromString(
