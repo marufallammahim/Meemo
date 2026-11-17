@@ -8,6 +8,14 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
+internal fun boundedNotificationText(value: CharSequence?, maxLength: Int): String {
+    require(maxLength >= 0)
+    if (value == null || maxLength == 0) return ""
+
+    val boundedLength = value.length.coerceAtMost(maxLength)
+    return value.subSequence(0, boundedLength).toString().trim()
+}
+
 @Singleton
 class NotificationProcessor @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -22,8 +30,14 @@ class NotificationProcessor @Inject constructor(
         val isRedacted = notification.visibility == Notification.VISIBILITY_SECRET
 
         val extras = notification.extras
-        val title = extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim().orEmpty()
-        val text = extras?.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim().orEmpty()
+        val title = if (isRedacted) "" else boundedNotificationText(
+            extras?.getCharSequence(Notification.EXTRA_TITLE),
+            MAX_NOTIFICATION_TITLE_LENGTH
+        )
+        val text = if (isRedacted) "" else boundedNotificationText(
+            extras?.getCharSequence(Notification.EXTRA_TEXT),
+            MAX_NOTIFICATION_BODY_LENGTH
+        )
 
         if (title.isEmpty() && text.isEmpty() && !isRedacted) return null
 
@@ -36,9 +50,14 @@ class NotificationProcessor @Inject constructor(
             packageName = pkg,
             appDisplayName = appName,
             senderOrTitle = title.ifEmpty { appName },
-            messageBody = if (isRedacted) "" else text.take(240),
+            messageBody = text,
             isContentRedactedBySystem = isRedacted,
             receivedAtMs = timeProvider.nowMillis()
         )
+    }
+
+    companion object {
+        private const val MAX_NOTIFICATION_TITLE_LENGTH = 120
+        private const val MAX_NOTIFICATION_BODY_LENGTH = 240
     }
 }
