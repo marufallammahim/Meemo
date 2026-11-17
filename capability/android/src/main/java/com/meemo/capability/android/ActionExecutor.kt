@@ -55,13 +55,14 @@ class ActionExecutor(
 
     private fun openApp(query: String): ActionResult {
         val packageManager = context.packageManager
-        val matches = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-            .mapNotNull { app ->
-                val label = app.loadLabel(packageManager).toString()
-                if (label.equals(query, true) || label.contains(query, true)) {
-                    packageManager.getLaunchIntentForPackage(app.packageName)?.let { Triple(label, it, app.packageName) }
-                } else null
-            }
+        val matches = packageManager.getInstalledApplications(PackageManager.GET_META_DATA).mapNotNull { app ->
+            val label = app.loadLabel(packageManager).toString()
+            if (label.equals(query, true) || label.contains(query, true)) {
+                packageManager.getLaunchIntentForPackage(app.packageName)?.let {
+                    Triple(label, it, app.packageName)
+                }
+            } else null
+        }
         val selected = matches.firstOrNull { it.first.equals(query, true) } ?: matches.singleOrNull()
         if (selected == null) {
             return if (matches.size > 1) {
