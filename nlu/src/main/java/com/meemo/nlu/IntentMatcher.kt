@@ -1,12 +1,13 @@
 package com.meemo.nlu
 
+import com.meemo.core.model.CommandEntity
 import com.meemo.core.model.MeemoIntent
 import com.meemo.core.model.SettingsPage
 
 data class IntentMatch(val intent: MeemoIntent, val confidence: Float)
 
 class IntentMatcher {
-    fun match(text: String): IntentMatch {
+    fun match(text: String, entities: List<CommandEntity> = emptyList()): IntentMatch {
         val value = text.trim()
         if (value.isEmpty()) return IntentMatch(MeemoIntent.Unknown(value), 0f)
         if (Regex("^(get battery|battery|battery status|check battery|show battery)$").matches(value)) {
@@ -16,13 +17,12 @@ class IntentMatcher {
             return IntentMatch(MeemoIntent.OpenBrowser, 0.98f)
         }
         settingsMatch(value)?.let { return IntentMatch(it, 0.98f) }
-        Regex("^whenever i say (.+) open (.+)$").matchEntire(value)?.let {
-            return IntentMatch(MeemoIntent.DefineAlias(it.groupValues[1].trim(), it.groupValues[2].trim()), 0.96f)
+        entities.filterIsInstance<CommandEntity.AliasDefinition>().firstOrNull()?.let {
+            return IntentMatch(MeemoIntent.DefineAlias(it.phrase, it.target), 0.96f)
         }
         fuzzyMatch(value)?.let { return it }
-        Regex("^open (.+)$").matchEntire(value)?.let {
-            val query = it.groupValues[1].trim()
-            if (query.isNotEmpty() && query != "settings") return IntentMatch(MeemoIntent.OpenApp(query), 0.91f)
+        entities.filterIsInstance<CommandEntity.AppName>().firstOrNull()?.let {
+            return IntentMatch(MeemoIntent.OpenApp(it.value), 0.91f)
         }
         return IntentMatch(MeemoIntent.Unknown(value), 0f)
     }
