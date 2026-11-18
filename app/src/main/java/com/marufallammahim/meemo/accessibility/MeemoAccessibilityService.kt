@@ -32,8 +32,13 @@ class MeemoAccessibilityService : AccessibilityService() {
     }
 
     override fun onUnbind(intent: android.content.Intent?): Boolean {
-        instance = null
+        if (instance === this) instance = null
         return super.onUnbind(intent)
+    }
+
+    override fun onDestroy() {
+        if (instance === this) instance = null
+        super.onDestroy()
     }
 
     fun openQuickSettingsPanel(): Boolean {
