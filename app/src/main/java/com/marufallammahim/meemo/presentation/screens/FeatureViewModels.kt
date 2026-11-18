@@ -30,9 +30,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -56,7 +60,16 @@ data class InstalledAppsUiState(
     val searchQuery: String = "",
     val launchableApps: List<InstalledAppInfo> = emptyList(),
     val browsers: List<InstalledAppInfo> = emptyList(),
-    val preferredBrowserPackage: String? = null
+    val preferredBrowserPackage: String? = null,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)
+
+private data class AppsDiscoveryState(
+    val launchableApps: List<InstalledAppInfo> = emptyList(),
+    val browsers: List<InstalledAppInfo> = emptyList(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
 )
 
 @HiltViewModel
@@ -65,19 +78,19 @@ class AppsViewModel @Inject constructor(
     private val repository: MeemoRepository
 ) : ViewModel() {
     private val searchQueryFlow = MutableStateFlow("")
-    private val allAppsFlow = MutableStateFlow<List<InstalledAppInfo>>(emptyList())
-    private val browsersFlow = MutableStateFlow<List<InstalledAppInfo>>(emptyList())
+    private val discoveryState = MutableStateFlow(AppsDiscoveryState(isLoading = true))
+    private var refreshJob: Job? = null
+    private var refreshGeneration = 0L
 
     val uiState: StateFlow<InstalledAppsUiState> = combine(
         searchQueryFlow,
-        allAppsFlow,
-        browsersFlow,
+        discoveryState,
         repository.userPreferencesFlow
-    ) { query, apps, browsers, prefs ->
+    ) { query, discovery, prefs ->
         val filtered = if (query.isBlank()) {
-            apps
+            discovery.launchableApps
         } else {
-            apps.filter {
+            discovery.launchableApps.filter {
                 it.appLabel.contains(query, ignoreCase = true) ||
                     it.packageName.contains(query, ignoreCase = true)
             }
@@ -85,18 +98,47 @@ class AppsViewModel @Inject constructor(
         InstalledAppsUiState(
             searchQuery = query,
             launchableApps = filtered,
-            browsers = browsers,
-            preferredBrowserPackage = prefs.preferredBrowserPackage
+            browsers = discovery.browsers,
+            preferredBrowserPackage = prefs.preferredBrowserPackage,
+            isLoading = discovery.isLoading,
+            errorMessage = discovery.errorMessage
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), InstalledAppsUiState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), InstalledAppsUiState(isLoading = true))
 
     init {
         refreshInstalledApps()
     }
 
     fun refreshInstalledApps() {
-        allAppsFlow.value = appManager.listLaunchableApps()
-        browsersFlow.value = appManager.listInstalledBrowsers()
+        val requestGeneration = ++refreshGeneration
+        refreshJob?.cancel()
+        discoveryState.value = discoveryState.value.copy(isLoading = true, errorMessage = null)
+        refreshJob = viewModelScope.launch {
+            try {
+                val (apps, browsers) = withContext(Dispatchers.IO) {
+                    appManager.listLaunchableApps() to appManager.listInstalledBrowsers()
+                }
+                if (requestGeneration == refreshGeneration) {
+                    discoveryState.value = AppsDiscoveryState(
+                        launchableApps = apps,
+                        browsers = browsers
+                    )
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                if (requestGeneration == refreshGeneration) {
+                    discoveryState.value = discoveryState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Installed applications could not be loaded. Try refreshing."
+                    )
+                }
+            } finally {
+                if (requestGeneration == refreshGeneration && discoveryState.value.isLoading) {
+                    discoveryState.value = discoveryState.value.copy(isLoading = false)
+                }
+            }
+        }
     }
 
     fun onSearchQueryChanged(query: String) {
