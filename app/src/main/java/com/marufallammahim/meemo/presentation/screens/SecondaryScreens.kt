@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -46,10 +47,23 @@ fun InstalledAppsScreen(
             .padding(MeemoDimens.SpaceMD),
         verticalArrangement = Arrangement.spacedBy(MeemoDimens.SpaceSM)
     ) {
-        Text(
-            text = "Dynamic Application & Browser Discovery",
-            style = MaterialTheme.typography.headlineMedium
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Dynamic Application & Browser Discovery",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.headlineMedium
+            )
+            OutlinedButton(
+                onClick = { viewModel.refreshInstalledApps() },
+                enabled = !state.isLoading
+            ) {
+                Text("Refresh")
+            }
+        }
         OutlinedTextField(
             value = state.searchQuery,
             onValueChange = { viewModel.onSearchQueryChanged(it) },
@@ -57,6 +71,30 @@ fun InstalledAppsScreen(
             placeholder = { Text("Search installed applications…") },
             singleLine = true
         )
+
+        if (state.isLoading && state.launchableApps.isEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(vertical = MeemoDimens.SpaceMD),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(MeemoDimens.SpaceXS)
+            ) {
+                CircularProgressIndicator()
+                Text("Scanning installed applications…")
+            }
+        }
+        state.errorMessage?.let { message ->
+            Text(text = message, color = MaterialTheme.colorScheme.error)
+        }
+        if (!state.isLoading && state.errorMessage == null && state.launchableApps.isEmpty()) {
+            Text(
+                text = if (state.searchQuery.isBlank()) {
+                    "No launchable applications were found."
+                } else {
+                    "No applications match your search."
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         if (state.browsers.isNotEmpty()) {
             Card(modifier = Modifier.fillMaxWidth()) {
