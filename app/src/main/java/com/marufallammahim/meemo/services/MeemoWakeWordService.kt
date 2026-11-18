@@ -40,16 +40,30 @@ class MeemoWakeWordService : Service() {
             return START_NOT_STICKY
         }
 
-        createNotificationChannel()
-        val notification = buildForegroundNotification()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+        try {
+            createNotificationChannel()
+            val notification = buildForegroundNotification()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+        } catch (error: Exception) {
+            // Android can reject microphone foreground-service starts when the
+            // app is backgrounded or a while-in-use permission is no longer valid.
+            isRunning = false
+            safeLogger.error(
+                "WakeWordService",
+                "Unable to start microphone foreground service",
+                error
             )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+            runCatching { stopForeground(STOP_FOREGROUND_REMOVE) }
+            stopSelfResult(startId)
+            return START_NOT_STICKY
         }
         isRunning = true
         safeLogger.info("WakeWordService", "Started foreground wake-word session with visible disclosure")
