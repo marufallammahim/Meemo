@@ -13,7 +13,19 @@ internal fun boundedNotificationText(value: CharSequence?, maxLength: Int): Stri
     if (value == null || maxLength == 0) return ""
 
     val boundedLength = value.length.coerceAtMost(maxLength)
-    return value.subSequence(0, boundedLength).toString().trim()
+    // Kotlin/Java strings use UTF-16. Do not leave an unmatched high surrogate
+    // when the configured limit falls between the two code units of a pair.
+    val safeLength = if (
+        boundedLength > 0 &&
+        boundedLength < value.length &&
+        Character.isHighSurrogate(value[boundedLength - 1]) &&
+        Character.isLowSurrogate(value[boundedLength])
+    ) {
+        boundedLength - 1
+    } else {
+        boundedLength
+    }
+    return value.subSequence(0, safeLength).toString().trim()
 }
 
 @Singleton
