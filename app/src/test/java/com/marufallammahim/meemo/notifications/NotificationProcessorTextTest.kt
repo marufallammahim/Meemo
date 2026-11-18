@@ -22,4 +22,10 @@ class NotificationProcessorTextTest {
         assertEquals("", boundedNotificationText(null, maxLength = 20))
         assertEquals("", boundedNotificationText("hello", maxLength = 0))
     }
+    @Test
+    fun `does not split supplementary Unicode characters at the length boundary`() {
+        assertEquals("hello", boundedNotificationText("hello 😀world", maxLength = 7))
+        assertEquals("A😀", boundedNotificationText("A😀B", maxLength = 3))
+    }
+
 }
