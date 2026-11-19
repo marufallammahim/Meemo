@@ -20,6 +20,9 @@ enum class TtsEngineState {
     UNAVAILABLE
 }
 
+internal fun TtsEngineState.acceptsSpeech(): Boolean =
+    this == TtsEngineState.READY || this == TtsEngineState.SPEAKING
+
 internal class PendingUtteranceQueue {
     private val pendingIds = mutableSetOf<String>()
 
@@ -67,9 +70,13 @@ class MeemoTtsEngine @Inject constructor(
         }
     }
 
+    @Synchronized
     override fun onInit(status: Int) {
+        // TextToSpeech initialization is asynchronous. A callback can arrive after
+        // shutdown(), so never let a stale callback resurrect a released engine.
+        val engine = tts ?: return
         if (status == TextToSpeech.SUCCESS) {
-            tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String?) {
                     if (pendingUtterances.contains(utteranceId)) {
                         _state.value = TtsEngineState.SPEAKING
@@ -103,22 +110,24 @@ class MeemoTtsEngine @Inject constructor(
         }
     }
 
+    @Synchronized
     fun isLanguageSupported(languageTag: String): Boolean {
+        if (!_state.value.acceptsSpeech()) return false
         val engine = tts ?: return false
         val locale = Locale.forLanguageTag(languageTag)
         val res = engine.isLanguageAvailable(locale)
         return res >= TextToSpeech.LANG_AVAILABLE
     }
 
+    @Synchronized
     fun speak(
         text: String,
         languageTag: String = "en-US",
         speechRate: Float = 1.0f,
         flushQueue: Boolean = true
     ): Boolean {
-        if (text.isBlank()) return false
+        if (text.isBlank() || !_state.value.acceptsSpeech()) return false
         val engine = tts ?: return false
-        if (_state.value == TtsEngineState.UNAVAILABLE) return false
 
         val locale = Locale.forLanguageTag(languageTag)
         val availability = engine.isLanguageAvailable(locale)
@@ -139,6 +148,7 @@ class MeemoTtsEngine @Inject constructor(
         return result == TextToSpeech.SUCCESS
     }
 
+    @Synchronized
     fun stop() {
         pendingUtterances.clear()
         runCatching { tts?.stop() }
@@ -147,13 +157,15 @@ class MeemoTtsEngine @Inject constructor(
         }
     }
 
+    @Synchronized
     fun shutdown() {
         pendingUtterances.clear()
-        runCatching {
-            tts?.stop()
-            tts?.shutdown()
-        }
+        val engine = tts
         tts = null
+        runCatching {
+            engine?.stop()
+            engine?.shutdown()
+        }
         _state.value = TtsEngineState.UNAVAILABLE
     }
 

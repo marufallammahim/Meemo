@@ -22,6 +22,14 @@ class MeemoTtsEngineTest {
     }
 
     @Test
+    fun `only ready or speaking engines accept speech requests`() {
+        assertFalse(TtsEngineState.INITIALIZING.acceptsSpeech())
+        assertTrue(TtsEngineState.READY.acceptsSpeech())
+        assertTrue(TtsEngineState.SPEAKING.acceptsSpeech())
+        assertFalse(TtsEngineState.UNAVAILABLE.acceptsSpeech())
+    }
+
+    @Test
     fun `keeps speaking state pending until every queued utterance completes`() {
         val queue = PendingUtteranceQueue()
         queue.enqueue("first", flushQueue = true)
