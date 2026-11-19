@@ -32,6 +32,7 @@ class SpeechRecognizerController @Inject constructor(
 
     private var speechRecognizer: SpeechRecognizer? = null
     private val isSessionActive = AtomicBoolean(false)
+    private val sessionGuard = RecognitionSessionGuard()
 
     fun isRecognitionAvailable(): Boolean =
         SpeechRecognizer.isRecognitionAvailable(context)
@@ -58,11 +59,13 @@ class SpeechRecognizerController @Inject constructor(
             return
         }
 
+        val sessionId = sessionGuard.beginSession()
         try {
+            // Invalidate callbacks from the previous recognizer before releasing it.
             releaseRecognizer()
             val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
             speechRecognizer = recognizer
-            recognizer.setRecognitionListener(createListener())
+            recognizer.setRecognitionListener(createListener(sessionId, recognizer))
 
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -73,7 +76,9 @@ class SpeechRecognizerController @Inject constructor(
             _state.value = VoiceRecognitionState.Listening(localeTag)
             recognizer.startListening(intent)
         } catch (e: Exception) {
+            sessionGuard.invalidateCurrentSession()
             isSessionActive.set(false)
+            releaseRecognizer()
             safeLogger.error("SpeechController", "Failed to start SpeechRecognizer", e)
             _state.value = VoiceRecognitionState.Error(
                 MeemoError.SpeechUnavailable(e.javaClass.simpleName)
@@ -82,26 +87,43 @@ class SpeechRecognizerController @Inject constructor(
     }
 
     fun stopListening() {
+        // stopListening() intentionally keeps this session valid so its final result
+        // can still be delivered. Partial results are ignored after the user stops.
         isSessionActive.set(false)
         runCatching { speechRecognizer?.stopListening() }
         _state.value = VoiceRecognitionState.Idle
     }
 
     fun cancelAndRelease() {
+        sessionGuard.invalidateCurrentSession()
         isSessionActive.set(false)
         releaseRecognizer()
         _state.value = VoiceRecognitionState.Idle
     }
 
     private fun releaseRecognizer() {
-        runCatching {
-            speechRecognizer?.cancel()
-            speechRecognizer?.destroy()
-        }
+        val recognizer = speechRecognizer
         speechRecognizer = null
+        runCatching {
+            recognizer?.cancel()
+            recognizer?.destroy()
+        }
     }
 
-    private fun createListener() = object : RecognitionListener {
+    private fun finishSession(sessionId: Long, recognizer: SpeechRecognizer): Boolean {
+        if (!sessionGuard.finishSession(sessionId)) return false
+        isSessionActive.set(false)
+        if (speechRecognizer === recognizer) {
+            speechRecognizer = null
+            runCatching { recognizer.destroy() }
+        }
+        return true
+    }
+
+    private fun createListener(
+        sessionId: Long,
+        recognizer: SpeechRecognizer
+    ) = object : RecognitionListener {
         override fun onReadyForSpeech(params: Bundle?) {}
         override fun onBeginningOfSpeech() {}
         override fun onRmsChanged(rmsdB: Float) {}
@@ -114,13 +136,13 @@ class SpeechRecognizerController @Inject constructor(
         }
 
         override fun onError(error: Int) {
-            isSessionActive.set(false)
+            if (!finishSession(sessionId, recognizer)) return
             val reason = mapRecognizerErrorCode(error)
             _state.value = VoiceRecognitionState.Error(MeemoError.SpeechUnavailable(reason))
         }
 
         override fun onResults(results: Bundle?) {
-            isSessionActive.set(false)
+            if (!finishSession(sessionId, recognizer)) return
             val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
             val best = matches?.firstOrNull()?.trim().orEmpty()
             if (best.isBlank()) {
@@ -131,6 +153,7 @@ class SpeechRecognizerController @Inject constructor(
         }
 
         override fun onPartialResults(partialResults: Bundle?) {
+            if (!sessionGuard.isCurrentSession(sessionId) || !isSessionActive.get()) return
             val partial = partialResults
                 ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 ?.firstOrNull()
