@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assistant_title">Meemo</string>
+    <string name="assistant_empty_title">Your assistant is ready</string>
+    <string name="assistant_empty_description">Type a command below to get started.</string>
+    <string name="assistant_input_hint">Type a command…</string>
+    <string name="assistant_send">Send</string>
+    <string name="assistant_processing">Meemo is thinking…</string>
+</resources>
