@@ -58,9 +58,9 @@ jobs:
         run: ./gradlew --no-daemon detekt
 
       - name: KtLint
-        if: ${{ always() && steps.assemble.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.assemble.outcome == 'success' }}
         run: ./gradlew --no-daemon ktlintCheck
 
       - name: Unit tests
-        if: ${{ always() && steps.assemble.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.assemble.outcome == 'success' }}
         run: ./gradlew --no-daemon testDebugUnitTest
