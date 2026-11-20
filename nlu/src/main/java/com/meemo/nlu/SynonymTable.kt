@@ -14,8 +14,8 @@ class SynonymTable {
         Regex("\\bwi\\s+fi\\b") to "wifi",
         Regex("ওয়াই\\s+ফাই") to "wifi",
         Regex("গুগল\\s+ক্রোম") to "chrome",
-        Regex("^ভলিউম\\s+([0-9০-৯]{1,3})\\s+(?:সেট\\s+)?করো$") to "set volume to $1",
-        Regex("^volume\\s+([0-9০-৯]{1,3})\\s+set\\s+koro$") to "set volume to $1"
+        Regex("^ভলিউম\\s+([0-9০-৯]{1,3})\\s+(?:সেট\\s+)?করো$") to "set volume to \\$1",
+        Regex("^volume\\s+([0-9০-৯]{1,3})\\s+set\\s+koro$") to "set volume to \\$1"
     )
 
     private val words = mapOf(
@@ -46,6 +46,10 @@ class SynonymTable {
         "বাড়াও" to "up",
         "বাড়াও" to "up",
         "কমাও" to "down",
+        "শতাংশ" to "percent",
+        "শতাংশে" to "percent",
+        "পার্সেন্ট" to "percent",
+        "পার্সেন্টে" to "percent",
         "ব্যাটারি" to "battery",
         "সেটিংস" to "settings",
         "সেটিং" to "settings",
