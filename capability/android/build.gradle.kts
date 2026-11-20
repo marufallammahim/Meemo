@@ -8,4 +8,5 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.hilt.android)
     implementation(libs.kotlinx.coroutines.android)
+    testImplementation(libs.junit)
 }
