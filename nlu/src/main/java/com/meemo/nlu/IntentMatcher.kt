@@ -26,7 +26,7 @@ class IntentMatcher {
         val volumeMatch = setVolumePattern.matchEntire(value)
         if (volumeMatch != null) {
             val percent = volumeMatch.groupValues[1].toIntOrNull()
-            return if (percent in 0..100) {
+            return if (percent != null && percent in 0..100) {
                 IntentMatch(MeemoIntent.SetVolume(percent = percent, delta = null), 0.98f)
             } else {
                 IntentMatch(MeemoIntent.Unknown(value), 0f)
