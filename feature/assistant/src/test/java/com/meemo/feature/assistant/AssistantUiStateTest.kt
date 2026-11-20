@@ -9,6 +9,7 @@ import com.meemo.domain.command.CommandActionExecutor
 import com.meemo.domain.command.CommandParserPort
 import com.meemo.domain.usecase.ProcessCommandUseCase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -30,6 +31,7 @@ class AssistantUiStateTest {
         assertEquals("Unsupported", ActionResult.Unsupported("No").toAssistantText().second)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun viewModelDoesNotTurnCancellationIntoAnErrorMessage() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
