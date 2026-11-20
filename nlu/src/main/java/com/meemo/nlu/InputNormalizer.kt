@@ -19,3 +19,10 @@ class InputNormalizer {
             .replace(Regex("\\s+"), " ")
     }
 }
+
+internal fun String.toAsciiDigits(): String = buildString(length) {
+    for (character in this@toAsciiDigits) {
+        val digit = character.digitToIntOrNull()
+        append(if (digit == null) character else ('0'.code + digit).toChar())
+    }
+}
