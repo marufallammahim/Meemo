@@ -5,8 +5,8 @@ plugins {
 }
 
 android {
-    namespace = "com.meemo.${project.path.removePrefix(":").replace(':', '.')}"
-    compileSdk = 36
+    namespace = "com.meemo.\${project.path.removePrefix(":").replace(':', '.')}"
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 26

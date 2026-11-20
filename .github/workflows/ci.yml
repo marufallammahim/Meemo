@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: meemo-ci-${{ github.workflow }}-${{ github.ref }}
+  group: meemo-ci-\${{ github.workflow }}-\${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -39,7 +39,7 @@ jobs:
           packages: platform-tools
 
       - name: Install Android platform
-        run: sdkmanager "platforms;android-36"
+        run: sdkmanager "platforms;android-37"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
