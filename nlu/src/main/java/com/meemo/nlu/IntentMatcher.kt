@@ -7,13 +7,20 @@ import com.meemo.core.model.SettingsPage
 data class IntentMatch(val intent: MeemoIntent, val confidence: Float)
 
 class IntentMatcher {
+    private val batteryPattern = Regex(
+        "^(get battery|battery|battery status|battery level|battery percentage|check battery|show battery)$"
+    )
+    private val browserPattern = Regex(
+        "^(open )?browser$|^open web browser$|^open internet browser$|^browse internet$"
+    )
+
     fun match(text: String, entities: List<CommandEntity> = emptyList()): IntentMatch {
         val value = text.trim()
         if (value.isEmpty()) return IntentMatch(MeemoIntent.Unknown(value), 0f)
-        if (Regex("^(get battery|battery|battery status|battery level|battery percentage|check battery|show battery)$").matches(value)) {
+        if (batteryPattern.matches(value)) {
             return IntentMatch(MeemoIntent.GetBattery, 0.98f)
         }
-        if (Regex("^(open )?browser$|^open web browser$|^open internet browser$|^browse internet$").matches(value)) {
+        if (browserPattern.matches(value)) {
             return IntentMatch(MeemoIntent.OpenBrowser, 0.98f)
         }
         settingsMatch(value)?.let { return IntentMatch(it, 0.98f) }
