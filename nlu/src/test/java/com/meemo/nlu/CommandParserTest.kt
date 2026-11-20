@@ -64,7 +64,30 @@ class CommandParserTest(private val input: String, private val expected: MeemoIn
             arrayOf("start calculator", MeemoIntent.OpenApp("calculator")),
             arrayOf("run camera", MeemoIntent.OpenApp("camera")),
             arrayOf("open files", MeemoIntent.OpenApp("files")),
-            arrayOf("whenever i say work open chrome", MeemoIntent.DefineAlias("work", "chrome"))
+            arrayOf("whenever i say work open chrome", MeemoIntent.DefineAlias("work", "chrome")),
+            arrayOf("হ্যালো মিমো ব্যাটারি কত", MeemoIntent.GetBattery),
+            arrayOf("ব্যাটারি স্ট্যাটাস", MeemoIntent.GetBattery),
+            arrayOf("ব্যাটারি লেভেল", MeemoIntent.GetBattery),
+            arrayOf("চার্জ কত আছে", MeemoIntent.GetBattery),
+            arrayOf("ব্রাউজার খোলো", MeemoIntent.OpenBrowser),
+            arrayOf("ইন্টারনেট ব্রাউজার খোলো", MeemoIntent.OpenBrowser),
+            arrayOf("ওয়াইফাই সেটিংস খোলো", MeemoIntent.OpenSettings(SettingsPage.WIFI)),
+            arrayOf("ওয়াই-ফাই সেটিংস খোলো", MeemoIntent.OpenSettings(SettingsPage.WIFI)),
+            arrayOf("wifi settings kholo", MeemoIntent.OpenSettings(SettingsPage.WIFI)),
+            arrayOf("ব্লুটুথ সেটিংস খোলো", MeemoIntent.OpenSettings(SettingsPage.BLUETOOTH)),
+            arrayOf("ডিসপ্লে সেটিংস খোলো", MeemoIntent.OpenSettings(SettingsPage.DISPLAY)),
+            arrayOf("সাউন্ড সেটিংস খোলো", MeemoIntent.OpenSettings(SettingsPage.SOUND)),
+            arrayOf("নোটিফিকেশন সেটিংস খোলো", MeemoIntent.OpenSettings(SettingsPage.NOTIFICATIONS)),
+            arrayOf("অ্যাক্সেসিবিলিটি সেটিংস খোলো", MeemoIntent.OpenSettings(SettingsPage.ACCESSIBILITY)),
+            arrayOf("সেটিংস খোলো", MeemoIntent.OpenSettings(SettingsPage.MAIN)),
+            arrayOf("Chrome kholo", MeemoIntent.OpenApp("chrome")),
+            arrayOf("calculator chalu koro", MeemoIntent.OpenApp("calculator")),
+            arrayOf("Chrome চালু করো", MeemoIntent.OpenApp("chrome")),
+            arrayOf("ক্যালকুলেটর খোলো", MeemoIntent.OpenApp("calculator")),
+            arrayOf("ক্যামেরা খোলো", MeemoIntent.OpenApp("camera")),
+            arrayOf("ক্রোম খোলো", MeemoIntent.OpenApp("chrome")),
+            arrayOf("গুগল ক্রোম চালু করো", MeemoIntent.OpenApp("chrome")),
+            arrayOf("ইউটিউব খোলো", MeemoIntent.OpenApp("youtube"))
         )
     }
 }
