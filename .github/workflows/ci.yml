@@ -48,6 +48,7 @@ jobs:
         uses: gradle/actions/wrapper-validation@v4
 
       - name: Assemble debug
+        id: assemble
         run: ./gradlew --no-daemon assembleDebug
 
       - name: Android lint
@@ -57,7 +58,9 @@ jobs:
         run: ./gradlew --no-daemon detekt
 
       - name: KtLint
+        if: ${{ !cancelled() && steps.assemble.outcome == 'success' }}
         run: ./gradlew --no-daemon ktlintCheck
 
       - name: Unit tests
+        if: ${{ !cancelled() && steps.assemble.outcome == 'success' }}
         run: ./gradlew --no-daemon testDebugUnitTest
