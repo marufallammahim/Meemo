@@ -4,7 +4,9 @@ import java.util.Locale
 
 class InputNormalizer {
     fun normalize(input: String): String {
-        val lower = input.lowercase(Locale.ROOT)
+        // Trim before anchored wake-phrase matching so leading ASR whitespace
+        // cannot prevent Bengali greetings from being removed.
+        val lower = input.trim().lowercase(Locale.ROOT)
         val withoutWakePhrase = lower
             .replace(Regex("\\b(hey\\s+meemo|hello\\s+meemo|meemo)\\b"), " ")
             .replace(Regex("^(?:হ্যালো|হাই|ওকে)[\\s,।:!]*মিমো[\\s,।:!]*"), " ")
