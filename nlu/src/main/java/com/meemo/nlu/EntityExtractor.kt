@@ -15,13 +15,13 @@ class EntityExtractor {
                 entities += CommandEntity.AppName(app)
             }
         }
-        Regex("\\b(\\d{1,3})\\s*(?:percent|%)?\\b").findAll(text).forEach {
+        Regex("(?<!\\d)(\\d{1,3})(?!\\d)").findAll(text.toAsciiDigits()).forEach {
             it.groupValues[1].toIntOrNull()?.let { number -> entities += CommandEntity.NumberValue(number) }
         }
         val numberWords = mapOf(
             "zero" to 0, "ten" to 10, "twenty" to 20, "thirty" to 30, "forty" to 40,
-            "fifty" to 50, "sixty" to 60, "seventy" to 70, "eighty" to 80,
-            "ninety" to 90, "hundred" to 100
+            "fifty" to 50, "sixty" to 60, "seventy" to 70, "eighty" to 80, "ninety" to 90,
+            "hundred" to 100
         )
         text.split(" ").forEach { word -> numberWords[word]?.let { entities += CommandEntity.NumberValue(it) } }
         val page = when {
