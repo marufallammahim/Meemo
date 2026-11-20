@@ -12,7 +12,8 @@ class SynonymTable {
         Regex("\\bturn\\s+off\\b") to "off",
         Regex("\\bswitch\\s+off\\b") to "off",
         Regex("\\bwi\\s+fi\\b") to "wifi",
-        Regex("ওয়াই\\s+ফাই") to "wifi"
+        Regex("ওয়াই\\s+ফাই") to "wifi",
+        Regex("গুগল\\s+ক্রোম") to "chrome"
     )
 
     private val words = mapOf(
@@ -42,7 +43,20 @@ class SynonymTable {
         "চার্জ" to "battery",
         "কত" to "koto",
         "কতো" to "koto",
-        "আছে" to "ache"
+        "আছে" to "ache",
+        "ক্যালকুলেটর" to "calculator",
+        "ক্যামেরা" to "camera",
+        "ক্রোম" to "chrome",
+        "ফায়ারফক্স" to "firefox",
+        "ফাইল" to "files",
+        "ফাইলস" to "files",
+        "গ্যালারি" to "gallery",
+        "ইউটিউব" to "youtube",
+        "জিমেইল" to "gmail",
+        "হোয়াটসঅ্যাপ" to "whatsapp",
+        "ফেসবুক" to "facebook",
+        "ইনস্টাগ্রাম" to "instagram",
+        "টেলিগ্রাম" to "telegram"
     )
 
     private val wholePhraseReplacements = listOf(
