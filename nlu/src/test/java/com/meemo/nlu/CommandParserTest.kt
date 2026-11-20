@@ -91,6 +91,8 @@ class CommandParserTest(private val input: String, private val expected: MeemoIn
             arrayOf("set volume to 50 percent", MeemoIntent.SetVolume(50, null)),
             arrayOf("volume 50%", MeemoIntent.SetVolume(50, null)),
             arrayOf("ভলিউম ৫০ সেট করো", MeemoIntent.SetVolume(50, null)),
+            arrayOf("ভলিউম ৫০ শতাংশ", MeemoIntent.SetVolume(50, null)),
+            arrayOf("volume 50 set koro", MeemoIntent.SetVolume(50, null)),
             arrayOf("ভলিউম বাড়াও", MeemoIntent.SetVolume(null, 1)),
             arrayOf("volume barao", MeemoIntent.SetVolume(null, 1)),
             arrayOf("ভলিউম কমাও", MeemoIntent.SetVolume(null, -1)),
