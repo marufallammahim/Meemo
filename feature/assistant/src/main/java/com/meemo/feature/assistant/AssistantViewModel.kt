@@ -42,7 +42,7 @@ class AssistantViewModel(private val processCommand: ProcessCommandUseCase) : Vi
             } catch (cancelled: CancellationException) {
                 // Preserve structured cancellation when the ViewModel is cleared.
                 throw cancelled
-            } catch (failure: Exception) {
+            } catch (_: Exception) {
                 _uiState.update { state ->
                     state.copy(
                         isProcessing = false,
