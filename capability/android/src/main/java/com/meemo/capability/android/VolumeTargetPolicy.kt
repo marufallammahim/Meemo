@@ -20,7 +20,8 @@ internal fun calculateVolumeTarget(
             }
         }
         else -> {
-            (currentVolume.toLong() + delta!!.toLong())
+            val adjustment = delta ?: return null
+            (currentVolume.toLong() + adjustment.toLong())
                 .coerceIn(0L, maxVolume.toLong())
                 .toInt()
         }
