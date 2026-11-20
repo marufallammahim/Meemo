@@ -83,7 +83,11 @@ class CommandParserTest(private val input: String, private val expected: MeemoIn
             arrayOf("Chrome kholo", MeemoIntent.OpenApp("chrome")),
             arrayOf("calculator chalu koro", MeemoIntent.OpenApp("calculator")),
             arrayOf("Chrome চালু করো", MeemoIntent.OpenApp("chrome")),
-            arrayOf("ক্যালকুলেটর খোলো", MeemoIntent.OpenApp("ক্যালকুলেটর"))
+            arrayOf("ক্যালকুলেটর খোলো", MeemoIntent.OpenApp("calculator")),
+            arrayOf("ক্যামেরা খোলো", MeemoIntent.OpenApp("camera")),
+            arrayOf("ক্রোম খোলো", MeemoIntent.OpenApp("chrome")),
+            arrayOf("গুগল ক্রোম চালু করো", MeemoIntent.OpenApp("chrome")),
+            arrayOf("ইউটিউব খোলো", MeemoIntent.OpenApp("youtube"))
         )
     }
 }
