@@ -87,7 +87,14 @@ class CommandParserTest(private val input: String, private val expected: MeemoIn
             arrayOf("ক্যামেরা খোলো", MeemoIntent.OpenApp("camera")),
             arrayOf("ক্রোম খোলো", MeemoIntent.OpenApp("chrome")),
             arrayOf("গুগল ক্রোম চালু করো", MeemoIntent.OpenApp("chrome")),
-            arrayOf("ইউটিউব খোলো", MeemoIntent.OpenApp("youtube"))
+            arrayOf("ইউটিউব খোলো", MeemoIntent.OpenApp("youtube")),
+            arrayOf("set volume to 50 percent", MeemoIntent.SetVolume(50, null)),
+            arrayOf("volume 50%", MeemoIntent.SetVolume(50, null)),
+            arrayOf("ভলিউম ৫০ সেট করো", MeemoIntent.SetVolume(50, null)),
+            arrayOf("ভলিউম বাড়াও", MeemoIntent.SetVolume(null, 1)),
+            arrayOf("volume barao", MeemoIntent.SetVolume(null, 1)),
+            arrayOf("ভলিউম কমাও", MeemoIntent.SetVolume(null, -1)),
+            arrayOf("decrease volume", MeemoIntent.SetVolume(null, -1))
         )
     }
 }
