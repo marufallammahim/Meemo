@@ -19,6 +19,12 @@ class EntityExtractorTest {
     }
 
     @Test
+    fun extractsBengaliDigitNumbers() {
+        val entities = EntityExtractor().extract("set volume to ৫০ percent")
+        assertTrue(entities.contains(CommandEntity.NumberValue(50)))
+    }
+
+    @Test
     fun extractsAppName() {
         assertTrue(EntityExtractor().extract("open chrome").contains(CommandEntity.AppName("chrome")))
     }
