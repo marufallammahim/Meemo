@@ -12,7 +12,7 @@ class InputNormalizer {
             .replace(Regex("\\b(please|can you|could you|would you)\\b"), " ")
             .replace(Regex("^\\s*(?:দয়া করে|অনুগ্রহ করে)\\s*"), " ")
         return withoutWakePhrase
-            .replace(Regex("[^\\p{L}\\p{N}%]+"), " ")
+            .replace(Regex("[^\\p{L}\\p{M}\\p{N}%]+"), " ")
             .trim()
             .replace(Regex("\\s+"), " ")
     }
