@@ -13,7 +13,9 @@ class SynonymTable {
         Regex("\\bswitch\\s+off\\b") to "off",
         Regex("\\bwi\\s+fi\\b") to "wifi",
         Regex("ওয়াই\\s+ফাই") to "wifi",
-        Regex("গুগল\\s+ক্রোম") to "chrome"
+        Regex("গুগল\\s+ক্রোম") to "chrome",
+        Regex("^ভলিউম\\s+([0-9০-৯]{1,3})\\s+(?:সেট\\s+)?করো$") to "set volume to $1",
+        Regex("^volume\\s+([0-9০-৯]{1,3})\\s+set\\s+koro$") to "set volume to $1"
     )
 
     private val words = mapOf(
@@ -25,6 +27,13 @@ class SynonymTable {
         "launch" to "open",
         "run" to "open",
         "wireless" to "wifi",
+        "increase" to "up",
+        "raise" to "up",
+        "decrease" to "down",
+        "lower" to "down",
+        "barao" to "up",
+        "barhao" to "up",
+        "komao" to "down",
         "ব্রাউজার" to "browser",
         "ওয়েব" to "web",
         "ইন্টারনেট" to "internet",
@@ -33,6 +42,10 @@ class SynonymTable {
         "ডিসপ্লে" to "display",
         "স্ক্রিন" to "screen",
         "সাউন্ড" to "sound",
+        "ভলিউম" to "volume",
+        "বাড়াও" to "up",
+        "বাড়াও" to "up",
+        "কমাও" to "down",
         "ব্যাটারি" to "battery",
         "সেটিংস" to "settings",
         "সেটিং" to "settings",
