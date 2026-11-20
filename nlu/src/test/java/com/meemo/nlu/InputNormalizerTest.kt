@@ -12,6 +12,7 @@ class InputNormalizerTest {
     @Test
     fun removesBengaliWakePhraseWithoutChangingTheCommand() {
         assertEquals("ব্যাটারি কত", InputNormalizer().normalize("হ্যালো মিমো, ব্যাটারি কত?"))
+        assertEquals("ব্যাটারি কত", InputNormalizer().normalize("হ্যালো মিমো, দয়া করে ব্যাটারি কত"))
         assertEquals("ব্রাউজার খোলো", InputNormalizer().normalize("মিমো ব্রাউজার খোলো"))
     }
 
