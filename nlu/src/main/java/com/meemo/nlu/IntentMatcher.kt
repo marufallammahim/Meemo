@@ -7,6 +7,11 @@ import com.meemo.core.model.SettingsPage
 data class IntentMatch(val intent: MeemoIntent, val confidence: Float)
 
 class IntentMatcher {
+    private val setVolumePattern = Regex(
+        "^(?:set )?(?:media )?volume(?: to)? (\\d{1,3})(?: percent|%)?$"
+    )
+    private val volumeUpPattern = Regex("^(?:volume up|up volume)$")
+    private val volumeDownPattern = Regex("^(?:volume down|down volume)$")
     private val batteryPattern = Regex(
         "^(get battery|battery|battery status|battery level|battery percentage|check battery|show battery)$"
     )
@@ -15,8 +20,24 @@ class IntentMatcher {
     )
 
     fun match(text: String, entities: List<CommandEntity> = emptyList()): IntentMatch {
-        val value = text.trim()
+        val value = text.trim().toAsciiDigits()
         if (value.isEmpty()) return IntentMatch(MeemoIntent.Unknown(value), 0f)
+
+        val volumeMatch = setVolumePattern.matchEntire(value)
+        if (volumeMatch != null) {
+            val percent = volumeMatch.groupValues[1].toIntOrNull()
+            return if (percent in 0..100) {
+                IntentMatch(MeemoIntent.SetVolume(percent = percent, delta = null), 0.98f)
+            } else {
+                IntentMatch(MeemoIntent.Unknown(value), 0f)
+            }
+        }
+        if (volumeUpPattern.matches(value)) {
+            return IntentMatch(MeemoIntent.SetVolume(percent = null, delta = 1), 0.96f)
+        }
+        if (volumeDownPattern.matches(value)) {
+            return IntentMatch(MeemoIntent.SetVolume(percent = null, delta = -1), 0.96f)
+        }
         if (batteryPattern.matches(value)) {
             return IntentMatch(MeemoIntent.GetBattery, 0.98f)
         }
