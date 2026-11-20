@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.meemo.core.model.InputSource
 import com.meemo.domain.usecase.ProcessCommandUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,30 +30,31 @@ class AssistantViewModel(private val processCommand: ProcessCommandUseCase) : Vi
             )
         }
         viewModelScope.launch {
-            runCatching { processCommand(text, InputSource.TEXT) }.fold(
-                onSuccess = { result ->
-                    val (message, status) = result.actionResult.toAssistantText()
-                    _uiState.update { state ->
-                        state.copy(
-                            isProcessing = false,
-                            messages = state.messages + AssistantMessage(System.nanoTime(), message, false, status)
-                        )
-                    }
-                },
-                onFailure = {
-                    _uiState.update { state ->
-                        state.copy(
-                            isProcessing = false,
-                            messages = state.messages + AssistantMessage(
-                                System.nanoTime(),
-                                "Something went wrong while processing that command.",
-                                false,
-                                "Error"
-                            )
-                        )
-                    }
+            try {
+                val result = processCommand(text, InputSource.TEXT)
+                val (message, status) = result.actionResult.toAssistantText()
+                _uiState.update { state ->
+                    state.copy(
+                        isProcessing = false,
+                        messages = state.messages + AssistantMessage(System.nanoTime(), message, false, status)
+                    )
                 }
-            )
+            } catch (cancelled: CancellationException) {
+                // Preserve structured cancellation when the ViewModel is cleared.
+                throw cancelled
+            } catch (_: Exception) {
+                _uiState.update { state ->
+                    state.copy(
+                        isProcessing = false,
+                        messages = state.messages + AssistantMessage(
+                            System.nanoTime(),
+                            "Something went wrong while processing that command.",
+                            false,
+                            "Error"
+                        )
+                    )
+                }
+            }
         }
     }
 }
