@@ -20,4 +20,10 @@ class InputNormalizerTest {
     fun keepsBengaliLettersAndDigitsDuringNormalization() {
         assertEquals("ভলিউম ৫০", InputNormalizer().normalize("ভলিউম ৫০"))
     }
+
+    @Test
+    fun preservesBengaliCombiningMarks() {
+        assertEquals("খুলুন", InputNormalizer().normalize("খুলুন"))
+        assertEquals("ব্যাটারি", InputNormalizer().normalize("ব্যাটারি"))
+    }
 }
