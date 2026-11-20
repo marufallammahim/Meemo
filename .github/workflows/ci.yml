@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: meemo-ci-${{ github.workflow }}-\${{ github.ref }}
+  group: meemo-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
