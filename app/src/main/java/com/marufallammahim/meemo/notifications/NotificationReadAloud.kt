@@ -40,11 +40,19 @@ class NotificationReadAloud @Inject constructor(
         if (!policy.shouldProcessNotification(item.packageName, signature, prefs)) {
             return
         }
-        enqueueTransient(item)
+
+        // Sender-only and system-redacted notifications must not retain preview text in memory.
+        // This also prevents a later preference change from exposing an earlier queued message.
+        val queuedItem = if (prefs.notificationAnnounceSenderOnly || item.isContentRedactedBySystem) {
+            item.copy(senderOrTitle = "", messageBody = "")
+        } else {
+            item
+        }
+        enqueueTransient(queuedItem)
 
         val useBengali = prefs.languageMode == AppLanguageMode.BENGALI
         val announcement = policy.formatSpokenAnnouncement(
-            item = item,
+            item = queuedItem,
             announceSenderOnly = prefs.notificationAnnounceSenderOnly,
             useBengali = useBengali
         )
