@@ -85,6 +85,12 @@ interface MeemoDao {
     @Query("SELECT * FROM automation_rules WHERE LOWER(trigger_phrase) = LOWER(:trigger) AND is_enabled = 1 LIMIT 1")
     suspend fun findAutomationRuleByTrigger(trigger: String): AutomationRuleEntity?
 
+    @Query(
+        "SELECT * FROM automation_rules WHERE is_enabled = 1 " +
+            "AND (LOWER(trigger_phrase) = LOWER(:query) OR LOWER(rule_name) = LOWER(:query)) LIMIT 1"
+    )
+    suspend fun findAutomationRuleByNameOrTrigger(query: String): AutomationRuleEntity?
+
     @Query("DELETE FROM automation_rules WHERE rule_id = :ruleId")
     suspend fun deleteAutomationRule(ruleId: String)
 
