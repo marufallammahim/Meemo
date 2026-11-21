@@ -12,6 +12,7 @@ import com.meemo.core.model.MeemoIntent
 import com.meemo.core.model.SettingsPage
 import com.meemo.domain.command.CommandActionExecutor
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -28,6 +29,9 @@ class ActionExecutor(
                 is MeemoIntent.Unknown -> ActionResult.Unsupported("I could not understand “${intent.raw}”.")
                 else -> ActionResult.Unsupported("This action is not available in the text assistant yet.")
             }
+        } catch (cancelled: CancellationException) {
+            // Cancellation is a lifecycle signal, not an action failure.
+            throw cancelled
         } catch (exception: Exception) {
             ActionResult.Failed("Meemo could not complete that action.", exception)
         }
