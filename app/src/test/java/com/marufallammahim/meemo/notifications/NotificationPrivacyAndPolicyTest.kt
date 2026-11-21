@@ -50,6 +50,25 @@ class NotificationPrivacyAndPolicyTest {
     }
 
     @Test
+    fun `bounds the duplicate cache while retaining recent signatures`() {
+        val policy = NotificationPolicy(fakeTime)
+
+        assertFalse(policy.isDuplicateWithinWindow("com.whatsapp", "message-0"))
+        for (index in 1..NotificationPolicy.MAX_TRACKED_NOTIFICATIONS) {
+            assertFalse(policy.isDuplicateWithinWindow("com.whatsapp", "message-$index"))
+        }
+
+        // The oldest entry is evicted at capacity, while the newest remains suppressible.
+        assertFalse(policy.isDuplicateWithinWindow("com.whatsapp", "message-0"))
+        assertTrue(
+            policy.isDuplicateWithinWindow(
+                "com.whatsapp",
+                "message-${NotificationPolicy.MAX_TRACKED_NOTIFICATIONS}"
+            )
+        )
+    }
+
+    @Test
     fun `does not treat same notification text from different apps as duplicate`() {
         val policy = NotificationPolicy(fakeTime)
 
