@@ -7,10 +7,14 @@ import com.marufallammahim.meemo.apps.AppResolutionResult
 import com.marufallammahim.meemo.apps.PackageResolver
 import com.marufallammahim.meemo.assistant.entity.ExtractedEntity
 import com.marufallammahim.meemo.assistant.entity.SettingsTarget
+import com.marufallammahim.meemo.assistant.entity.VolumeDirection
 import com.marufallammahim.meemo.assistant.intent.MeemoIntent
 import com.marufallammahim.meemo.core.error.MeemoError
+import com.marufallammahim.meemo.domain.model.AutomationStepSpec
+import com.marufallammahim.meemo.domain.repository.MeemoRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,7 +25,8 @@ sealed interface ActionPlanOutcome {
 
 @Singleton
 class ActionPlanner @Inject constructor(
-    private val packageResolver: PackageResolver
+    private val packageResolver: PackageResolver,
+    private val repository: MeemoRepository
 ) {
     suspend fun plan(
         intent: MeemoIntent,
@@ -112,12 +117,7 @@ class ActionPlanner @Inject constructor(
             }
             MeemoIntent.RUN_AUTOMATION -> {
                 val trigger = (entity as? ExtractedEntity.AutomationTrigger)?.routineName.orEmpty()
-                ActionPlanOutcome.Planned(
-                    MeemoAction.ExecuteAutomationRoutine(
-                        routineName = trigger,
-                        steps = listOf(MeemoAction.TurnTorchOff, MeemoAction.GetBatteryStatus)
-                    )
-                )
+                planAutomation(trigger)
             }
             MeemoIntent.ROOT_SYSTEM_DIAGNOSTIC -> {
                 val rootEntity = entity as? ExtractedEntity.RootOperationTarget
@@ -135,6 +135,66 @@ class ActionPlanner @Inject constructor(
             )
         }
     }
+
+    private suspend fun planAutomation(trigger: String): ActionPlanOutcome {
+        val query = trigger.trim()
+        if (query.isBlank()) {
+            return automationFailure("Routine name is missing.")
+        }
+        val rule = repository.findAutomationRuleByNameOrTrigger(query)
+            ?: return automationFailure("No enabled routine matches '$query'.")
+        if (!rule.isEnabled) {
+            return automationFailure("Routine '${rule.ruleName}' is disabled.")
+        }
+        if (rule.steps.isEmpty()) {
+            return automationFailure("Routine '${rule.ruleName}' has no actions.")
+        }
+
+        val actions = ArrayList<MeemoAction>(rule.steps.size)
+        for (step in rule.steps) {
+            val action = mapAutomationStep(step)
+                ?: return automationFailure(
+                    "Routine '${rule.ruleName}' contains an unsupported or invalid action."
+                )
+            actions += action
+        }
+        return ActionPlanOutcome.Planned(
+            MeemoAction.ExecuteAutomationRoutine(
+                routineName = rule.ruleName,
+                steps = actions,
+                requiresConfirmation = rule.requireConfirmation
+            )
+        )
+    }
+
+    private fun mapAutomationStep(step: AutomationStepSpec): MeemoAction? {
+        val entity = step.entityValue?.trim()
+        return when (step.intentName.trim().uppercase(Locale.ROOT)) {
+            "TORCH_ON" -> MeemoAction.TurnTorchOn
+            "TORCH_OFF" -> MeemoAction.TurnTorchOff
+            "GET_BATTERY_STATUS" -> MeemoAction.GetBatteryStatus
+            "GET_DEVICE_INFORMATION" -> MeemoAction.GetDeviceInformation
+            "MEDIA_PLAY" -> MeemoAction.MediaControl(MediaCommandType.PLAY)
+            "MEDIA_PAUSE" -> MeemoAction.MediaControl(MediaCommandType.PAUSE)
+            "MEDIA_NEXT" -> MeemoAction.MediaControl(MediaCommandType.NEXT)
+            "MEDIA_PREVIOUS" -> MeemoAction.MediaControl(MediaCommandType.PREVIOUS)
+            "SET_VOLUME" -> entity
+                ?.removeSuffix("%")
+                ?.toIntOrNull()
+                ?.takeIf { it in 0..100 }
+                ?.let { MeemoAction.SetVolume(levelPercent = it) }
+            "ADJUST_VOLUME" -> entity
+                ?.let { value ->
+                    VolumeDirection.entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+                }
+                ?.let { MeemoAction.AdjustVolume(it) }
+            else -> null
+        }
+    }
+
+    private fun automationFailure(message: String) = ActionPlanOutcome.ImmediateResult(
+        ActionResult.Failed(MeemoError.UnrecognizedCommand(message))
+    )
 
     private suspend fun resolveAppByName(query: String): AppResolutionResult =
         withContext(Dispatchers.IO) {
