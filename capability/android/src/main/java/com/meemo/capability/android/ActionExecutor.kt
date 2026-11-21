@@ -2,7 +2,6 @@ package com.meemo.capability.android
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.BatteryManager
 import android.provider.Settings
@@ -57,17 +56,30 @@ class ActionExecutor(
         return ActionResult.Success("Opening your browser.")
     }
 
-    private fun openApp(query: String): ActionResult {
+    private suspend fun openApp(query: String): ActionResult {
         val packageManager = context.packageManager
-        val matches = packageManager.getInstalledApplications(PackageManager.GET_META_DATA).mapNotNull { app ->
-            val label = app.loadLabel(packageManager).toString()
-            if (label.equals(query, true) || label.contains(query, true)) {
-                packageManager.getLaunchIntentForPackage(app.packageName)?.let {
-                    Triple(label, it, app.packageName)
+        val launchableApps = withContext(Dispatchers.IO) {
+            val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+            packageManager.queryIntentActivities(launcherIntent, 0)
+                .mapNotNull { resolveInfo ->
+                    val appInfo = resolveInfo.activityInfo?.applicationInfo ?: return@mapNotNull null
+                    val launchIntent = packageManager.getLaunchIntentForPackage(appInfo.packageName)
+                        ?: return@mapNotNull null
+                    ResolvedLaunchableApp(
+                        app = LaunchableApp(
+                            packageName = appInfo.packageName,
+                            label = appInfo.loadLabel(packageManager).toString()
+                        ),
+                        launchIntent = launchIntent
+                    )
                 }
-            } else null
+                .distinctBy { it.app.packageName }
         }
-        val selected = matches.firstOrNull { it.first.equals(query, true) } ?: matches.singleOrNull()
+
+        val matches = matchLaunchableApps(query, launchableApps.map { it.app })
+        val selected = matches.singleOrNull()?.let { match ->
+            launchableApps.firstOrNull { it.app.packageName == match.packageName }
+        }
         if (selected == null) {
             return if (matches.size > 1) {
                 ActionResult.NeedsUserAction("More than one app matches “$query”. Please choose the app.")
@@ -75,9 +87,10 @@ class ActionExecutor(
                 ActionResult.Unsupported("I could not find an installed app named “$query”.")
             }
         }
-        selected.second.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(selected.second)
-        return ActionResult.Success("Opening ${selected.first}.")
+
+        selected.launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(selected.launchIntent)
+        return ActionResult.Success("Opening ${selected.app.label}.")
     }
 
     private fun openSettings(page: SettingsPage): ActionResult {
@@ -101,4 +114,9 @@ class ActionExecutor(
         context.startActivity(settingsIntent)
         return ActionResult.Success("Opening ${page.name.lowercase()} settings.")
     }
+
+    private data class ResolvedLaunchableApp(
+        val app: LaunchableApp,
+        val launchIntent: Intent
+    )
 }
