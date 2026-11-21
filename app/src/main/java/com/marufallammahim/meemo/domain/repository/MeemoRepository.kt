@@ -41,6 +41,7 @@ interface MeemoRepository {
     suspend fun deleteAlias(aliasId: String)
 
     suspend fun findAutomationRuleByTrigger(triggerPhrase: String): AutomationRuleModel?
+    suspend fun findAutomationRuleByNameOrTrigger(query: String): AutomationRuleModel?
     suspend fun saveAutomationRule(rule: AutomationRuleModel)
     suspend fun deleteAutomationRule(ruleId: String)
 
