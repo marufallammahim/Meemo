@@ -16,9 +16,20 @@ This document is the manual test ledger for capability work. Each command must b
 | open battery settings | OpenSettings(BATTERY) | Open Android battery saver settings |
 | open accessibility settings | OpenSettings(ACCESSIBILITY) | Open Android accessibility settings |
 | open notification settings | OpenSettings(NOTIFICATIONS) | Open this app's notification settings |
-| whenever I say work open Chrome | DefineAlias | Parse the alias definition; persistence is a later phase |
+| whenever I say work open Chrome | DefineAlias | Save a reusable app-launch alias locally |
 
 Wake phrases such as “Hey Meemo” and polite filler such as “please” are removed before parsing. Common verb and device synonyms are canonicalized. Fuzzy intent matches carry lower confidence and are routed to confirmation when confidence is below 0.8.
+
+## Saved automation routines
+
+The Memory & Aliases screen can create a sample routine. A routine is stored locally with a display name, trigger phrase, ordered steps, enabled state, and confirmation preference.
+
+- Say `run routine <name>` or `run routine <trigger>` to execute an enabled saved routine.
+- Routine lookup accepts either the saved display name or its trigger phrase, ignoring English letter case.
+- Supported step IDs are `TORCH_ON`, `TORCH_OFF`, `GET_BATTERY_STATUS`, `GET_DEVICE_INFORMATION`, `SET_VOLUME`, `ADJUST_VOLUME`, and `MEDIA_PLAY`, `MEDIA_PAUSE`, `MEDIA_NEXT`, `MEDIA_PREVIOUS`.
+- `SET_VOLUME` requires an integer percentage from 0 through 100. `ADJUST_VOLUME` requires `UP`, `DOWN`, `MUTE`, or `UNMUTE`.
+- Unsupported, invalid, root, alias-writing, and nested automation steps are rejected before any routine step is dispatched.
+- The saved `requireConfirmation` setting is honored by the normal assistant confirmation flow.
 
 ## Phase 2 manual emulator verification
 
@@ -30,13 +41,22 @@ Wake phrases such as “Hey Meemo” and polite filler such as “please” are 
 - [ ] Type an unclear phrase; verify Meemo does not execute an arbitrary action.
 - [ ] Type Hey Meemo, please open browser; verify wake phrase and filler removal.
 
+## Automation manual verification
+
+- [ ] Create a sample routine with a unique name and trigger phrase in Memory & Aliases.
+- [ ] Run it by its display name and then by its trigger phrase; verify the stored steps run in order.
+- [ ] Create a routine with confirmation enabled; verify execution waits for the assistant confirmation flow.
+- [ ] Verify an unknown routine and a routine with an unsupported step fail without executing any step.
+
 ## Foundation
+
 - [ ] Install and launch the debug build.
 - [ ] Confirm the Assistant destination renders without a crash.
 - [ ] Rotate the device and verify the screen remains usable.
 - [ ] Enable TalkBack and verify navigation labels.
 
 ## Device capability checks
+
 - [ ] Battery query reports the platform battery state.
 - [ ] App launch resolves only visible launchable applications.
 - [ ] Browser launch resolves an HTTPS VIEW handler.
@@ -44,6 +64,7 @@ Wake phrases such as “Hey Meemo” and polite filler such as “please” are 
 - [ ] Torch reports unsupported when the device has no flash hardware.
 
 ## Privacy and permissions
+
 - [ ] Voice input requests microphone permission only when invoked.
 - [ ] Denied microphone permission produces a recoverable explanation.
 - [ ] Accessibility remains disabled until user opt-in and disclosure.
@@ -56,5 +77,5 @@ Wake phrases such as “Hey Meemo” and polite filler such as “please” are 
 - Browser launch uses an Android ACTION_VIEW intent and does not inspect browsing history.
 - Battery status is read through BatteryManager.
 - OEMs may omit or customize individual settings destinations.
-- This phase does not implement alias storage, voice input, root commands, shell execution, Wi-Fi/Bluetooth toggles, or arbitrary system control.
+- Root diagnostics remain a separate explicitly confirmed capability and cannot be embedded in a routine.
 - Emulator/device interaction must be verified manually; CI unit tests cannot prove OEM-specific intent resolution.

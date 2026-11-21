@@ -184,6 +184,11 @@ class MeemoRepositoryImpl @Inject constructor(
             dao.findAutomationRuleByTrigger(triggerPhrase.trim())?.toDomain()
         }
 
+    override suspend fun findAutomationRuleByNameOrTrigger(query: String): AutomationRuleModel? =
+        withContext(dispatchers.io) {
+            dao.findAutomationRuleByNameOrTrigger(query.trim())?.toDomain()
+        }
+
     override suspend fun saveAutomationRule(rule: AutomationRuleModel) = withContext(dispatchers.io) {
         val stepsJson = json.encodeToString(
             ListSerializer(AutomationStepSpec.serializer()),
