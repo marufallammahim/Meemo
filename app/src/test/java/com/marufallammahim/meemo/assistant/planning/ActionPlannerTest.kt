@@ -1,5 +1,6 @@
 package com.marufallammahim.meemo.assistant.planning
 
+import com.marufallammahim.meemo.actions.ActionResult
 import com.marufallammahim.meemo.actions.MeemoAction
 import com.marufallammahim.meemo.apps.AppResolutionResult
 import com.marufallammahim.meemo.apps.PackageResolver
@@ -56,7 +57,7 @@ class ActionPlannerTest {
 
         assertEquals(
             ActionPlanOutcome.ImmediateResult(
-                com.marufallammahim.meemo.actions.ActionResult.Ambiguous(
+                ActionResult.Ambiguous(
                     query = "Browser",
                     candidateApps = candidates
                 )
