@@ -9,6 +9,8 @@ import com.marufallammahim.meemo.assistant.entity.ExtractedEntity
 import com.marufallammahim.meemo.assistant.entity.SettingsTarget
 import com.marufallammahim.meemo.assistant.intent.MeemoIntent
 import com.marufallammahim.meemo.core.error.MeemoError
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,7 +23,7 @@ sealed interface ActionPlanOutcome {
 class ActionPlanner @Inject constructor(
     private val packageResolver: PackageResolver
 ) {
-    fun plan(
+    suspend fun plan(
         intent: MeemoIntent,
         entity: ExtractedEntity,
         preferredBrowserPackage: String?
@@ -34,7 +36,7 @@ class ActionPlanner @Inject constructor(
                         ActionResult.Failed(MeemoError.UnrecognizedCommand("Missing application name"))
                     )
                 }
-                when (val res = packageResolver.resolveAppByName(appQuery)) {
+                when (val res = resolveAppByName(appQuery)) {
                     is AppResolutionResult.ExactOrSingleMatch -> ActionPlanOutcome.Planned(
                         MeemoAction.OpenApplication(
                             packageName = res.app.packageName,
@@ -92,7 +94,7 @@ class ActionPlanner @Inject constructor(
                     ?: return ActionPlanOutcome.ImmediateResult(
                         ActionResult.Failed(MeemoError.UnrecognizedCommand("Invalid alias syntax"))
                     )
-                when (val targetRes = packageResolver.resolveAppByName(def.targetAppName)) {
+                when (val targetRes = resolveAppByName(def.targetAppName)) {
                     is AppResolutionResult.ExactOrSingleMatch -> ActionPlanOutcome.Planned(
                         MeemoAction.SaveCustomAlias(
                             triggerPhrase = def.triggerPhrase,
@@ -133,4 +135,9 @@ class ActionPlanner @Inject constructor(
             )
         }
     }
+
+    private suspend fun resolveAppByName(query: String): AppResolutionResult =
+        withContext(Dispatchers.IO) {
+            packageResolver.resolveAppByName(query)
+        }
 }
