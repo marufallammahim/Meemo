@@ -15,8 +15,10 @@ class EntityExtractor {
                 entities += CommandEntity.AppName(app)
             }
         }
-        Regex("\\b(\\d{1,3})\\s*(?:percent|%)?\\b").findAll(text).forEach {
-            it.groupValues[1].toIntOrNull()?.let { number -> entities += CommandEntity.NumberValue(number) }
+        DECIMAL_NUMBER_PATTERN.findAll(text).forEach { match ->
+            parseDecimalNumber(match.groupValues[1])?.let { number ->
+                entities += CommandEntity.NumberValue(number)
+            }
         }
         val numberWords = mapOf(
             "zero" to 0, "ten" to 10, "twenty" to 20, "thirty" to 30, "forty" to 40,
@@ -33,5 +35,19 @@ class EntityExtractor {
         }
         page?.let { entities += CommandEntity.Setting(it) }
         return entities.distinct()
+    }
+
+    private fun parseDecimalNumber(value: String): Int? {
+        var number = 0
+        for (character in value) {
+            val digit = Character.digit(character, 10)
+            if (digit < 0) return null
+            number = number * 10 + digit
+        }
+        return number
+    }
+
+    private companion object {
+        val DECIMAL_NUMBER_PATTERN = Regex("(?<![\\p{L}\\p{N}])([\\p{Nd}]{1,3})(?![\\p{L}\\p{N}])")
     }
 }

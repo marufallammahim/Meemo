@@ -2,6 +2,7 @@ package com.meemo.capability.android
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import android.net.Uri
 import android.os.BatteryManager
 import android.provider.Settings
@@ -14,6 +15,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 class ActionExecutor(
     @ApplicationContext private val context: Context
@@ -25,6 +27,7 @@ class ActionExecutor(
                 MeemoIntent.OpenBrowser -> openBrowser()
                 is MeemoIntent.OpenApp -> openApp(intent.query)
                 is MeemoIntent.OpenSettings -> openSettings(intent.page)
+                is MeemoIntent.SetVolume -> setVolume(intent)
                 is MeemoIntent.Unknown -> ActionResult.Unsupported("I could not understand “${intent.raw}”.")
                 else -> ActionResult.Unsupported("This action is not available in the text assistant yet.")
             }
@@ -44,6 +47,34 @@ class ActionExecutor(
         } else {
             ActionResult.Unsupported("Battery information is not available on this device.")
         }
+    }
+
+    private fun setVolume(intent: MeemoIntent.SetVolume): ActionResult {
+        val audioManager = context.getSystemService(AudioManager::class.java)
+            ?: return ActionResult.Unsupported("Media volume control is not available on this device.")
+        val stream = AudioManager.STREAM_MUSIC
+        val maxVolume = audioManager.getStreamMaxVolume(stream)
+        if (maxVolume <= 0) {
+            return ActionResult.Unsupported("Media volume control is not available on this device.")
+        }
+
+        val percent = intent.percent
+        val delta = intent.delta
+        val targetVolume = when {
+            percent != null -> {
+                (percent.coerceIn(0, 100) / 100f * maxVolume).roundToInt()
+            }
+            delta != null -> {
+                val currentVolume = audioManager.getStreamVolume(stream)
+                (currentVolume.toLong() + delta.toLong()).coerceIn(0L, maxVolume.toLong()).toInt()
+            }
+            else -> return ActionResult.Unsupported("A target volume level was not provided.")
+        }.coerceIn(0, maxVolume)
+
+        audioManager.setStreamVolume(stream, targetVolume, AudioManager.FLAG_SHOW_UI)
+        val verifiedVolume = audioManager.getStreamVolume(stream).coerceIn(0, maxVolume)
+        val verifiedPercent = (verifiedVolume.toFloat() / maxVolume * 100).roundToInt()
+        return ActionResult.Success("Media volume is now $verifiedPercent%.")
     }
 
     private fun openBrowser(): ActionResult {

@@ -13,6 +13,33 @@ class IntentMatcher {
     private val browserPattern = Regex(
         "^(open )?browser$|^open web browser$|^open internet browser$|^browse internet$"
     )
+    private val setVolumePatterns = listOf(
+        Regex("^(?:set|change) (?:the )?(?:(?:media|music) )?volume to [\\p{Nd}]{1,3}(?:\\s*(?:%|percent))?$"),
+        Regex(
+            "^(?:volume|sound) [\\p{Nd}]{1,3}(?:\\s*(?:%|percent))?" +
+                "(?:\\s*(?:set koro|koro|rakho|সেট করো|করো|রাখো))?$"
+        ),
+        Regex(
+            "^ভলিউম [\\p{Nd}]{1,3}(?:\\s*(?:%|শতাংশে?|পার্সেন্টে?))?" +
+                "(?:\\s*(?:সেট করো|করো|রাখো))?$"
+        )
+    )
+    private val volumeUpPatterns = listOf(
+        Regex("^(?:turn )?volume up$"),
+        Regex("^turn (?:the )?volume up$"),
+        Regex("^(?:volume|sound) up$"),
+        Regex("^(?:increase|raise) (?:the )?volume$"),
+        Regex("^ভলিউম বাড়াও$"),
+        Regex("^(?:volume|sound) (?:barao|বাড়াও)$")
+    )
+    private val volumeDownPatterns = listOf(
+        Regex("^(?:turn )?volume down$"),
+        Regex("^turn (?:the )?volume down$"),
+        Regex("^(?:volume|sound) down$"),
+        Regex("^(?:decrease|lower) (?:the )?volume$"),
+        Regex("^ভলিউম কমাও$"),
+        Regex("^(?:volume|sound) (?:komao|কমাও)$")
+    )
 
     fun match(text: String, entities: List<CommandEntity> = emptyList()): IntentMatch {
         val value = text.trim()
@@ -22,6 +49,17 @@ class IntentMatcher {
         }
         if (browserPattern.matches(value)) {
             return IntentMatch(MeemoIntent.OpenBrowser, 0.98f)
+        }
+        if (setVolumePatterns.any { it.matches(value) }) {
+            val percent = entities.filterIsInstance<CommandEntity.NumberValue>().firstOrNull()?.value
+                ?: return IntentMatch(MeemoIntent.Unknown(value), 0f)
+            return IntentMatch(MeemoIntent.SetVolume(percent = percent.coerceIn(0, 100), delta = null), 0.98f)
+        }
+        if (volumeUpPatterns.any { it.matches(value) }) {
+            return IntentMatch(MeemoIntent.SetVolume(percent = null, delta = 1), 0.98f)
+        }
+        if (volumeDownPatterns.any { it.matches(value) }) {
+            return IntentMatch(MeemoIntent.SetVolume(percent = null, delta = -1), 0.98f)
         }
         settingsMatch(value)?.let { return IntentMatch(it, 0.98f) }
         entities.filterIsInstance<CommandEntity.AliasDefinition>().firstOrNull()?.let {
