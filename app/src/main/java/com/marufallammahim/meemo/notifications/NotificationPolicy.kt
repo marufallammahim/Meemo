@@ -3,7 +3,7 @@ package com.marufallammahim.meemo.notifications
 import com.marufallammahim.meemo.core.utilities.TimeProvider
 import com.marufallammahim.meemo.domain.model.UserPreferences
 import java.security.MessageDigest
-import java.util.concurrent.ConcurrentHashMap
+import java.util.LinkedHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,13 +18,14 @@ data class TransientNotificationItem(
 
 /**
  * Enforces notification privacy, package allowlist, quiet hours, and duplicate suppression.
- * Notification content hashes expire after 60 seconds and raw bodies are never stored on disk.
+ * Notification hashes expire after 60 seconds and the in-memory cache has a fixed upper bound.
+ * Raw notification bodies are never stored on disk.
  */
 @Singleton
 class NotificationPolicy @Inject constructor(
     private val timeProvider: TimeProvider
 ) {
-    private val recentHashes = ConcurrentHashMap<String, Long>()
+    private val recentHashes = LinkedHashMap<String, Long>(16, 0.75f, true)
 
     fun shouldProcessNotification(
         packageName: String,
@@ -53,11 +54,20 @@ class NotificationPolicy @Inject constructor(
 
     fun isDuplicateWithinWindow(packageName: String, content: String): Boolean {
         val now = timeProvider.nowMillis()
-        recentHashes.entries.removeIf { (_, timestamp) -> (now - timestamp) > DUPLICATE_WINDOW_MS }
-
         val hash = sha256("$packageName|$content")
-        val previous = recentHashes.put(hash, now)
-        return previous != null && (now - previous) <= DUPLICATE_WINDOW_MS
+        synchronized(recentHashes) {
+            recentHashes.entries.removeIf { (_, timestamp) ->
+                (now - timestamp) > DUPLICATE_WINDOW_MS
+            }
+
+            // Access-order keeps frequently repeated signatures from being evicted first.
+            val previous = recentHashes.put(hash, now)
+            while (recentHashes.size > MAX_TRACKED_NOTIFICATIONS) {
+                val oldestKey = recentHashes.entries.iterator().next().key
+                recentHashes.remove(oldestKey)
+            }
+            return previous != null && (now - previous) <= DUPLICATE_WINDOW_MS
+        }
     }
 
     fun formatSpokenAnnouncement(
@@ -86,5 +96,6 @@ class NotificationPolicy @Inject constructor(
 
     companion object {
         const val DUPLICATE_WINDOW_MS = 60_000L
+        const val MAX_TRACKED_NOTIFICATIONS = 512
     }
 }
