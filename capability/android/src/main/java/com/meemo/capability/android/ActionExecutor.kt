@@ -57,6 +57,9 @@ class ActionExecutor(
         if (maxVolume <= 0) {
             return ActionResult.Unsupported("Media volume control is not available on this device.")
         }
+        if (audioManager.isVolumeFixed()) {
+            return ActionResult.Unsupported("Media volume is fixed by this device.")
+        }
 
         val percent = intent.percent
         val delta = intent.delta
@@ -73,6 +76,9 @@ class ActionExecutor(
 
         audioManager.setStreamVolume(stream, targetVolume, AudioManager.FLAG_SHOW_UI)
         val verifiedVolume = audioManager.getStreamVolume(stream).coerceIn(0, maxVolume)
+        if (verifiedVolume != targetVolume) {
+            return ActionResult.Unsupported("The device did not apply the requested media volume.")
+        }
         val verifiedPercent = (verifiedVolume.toFloat() / maxVolume * 100).roundToInt()
         return ActionResult.Success("Media volume is now $verifiedPercent%.")
     }
