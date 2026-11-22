@@ -16,7 +16,7 @@ class IntentMatcher {
     private val setVolumePatterns = listOf(
         Regex("^(?:set|change) (?:the )?(?:(?:media|music) )?volume to [\\p{Nd}]{1,3}(?:\\s*(?:%|percent))?$"),
         Regex(
-            "^(?:volume|sound) [\\p{Nd}]{1,3}(?:\\s*(?:%|percent))?" +
+            "^(?:volume|sound) [\\p{Nd}]{1,3}(?:\\s*(?:%|percent|শতাংশে?|পার্সেন্টে?))?" +
                 "(?:\\s*(?:set koro|koro|rakho|সেট করো|করো|রাখো))?$"
         ),
         Regex(
@@ -27,6 +27,7 @@ class IntentMatcher {
     private val volumeUpPatterns = listOf(
         Regex("^(?:turn )?volume up$"),
         Regex("^turn (?:the )?volume up$"),
+        Regex("^turn up (?:the )?volume$"),
         Regex("^(?:volume|sound) up$"),
         Regex("^(?:increase|raise) (?:the )?volume$"),
         Regex("^ভলিউম বাড়াও$"),
@@ -35,6 +36,7 @@ class IntentMatcher {
     private val volumeDownPatterns = listOf(
         Regex("^(?:turn )?volume down$"),
         Regex("^turn (?:the )?volume down$"),
+        Regex("^turn down (?:the )?volume$"),
         Regex("^(?:volume|sound) down$"),
         Regex("^(?:decrease|lower) (?:the )?volume$"),
         Regex("^ভলিউম কমাও$"),
