@@ -30,6 +30,7 @@ class ActionExecutorVolumeTest {
             val audioManager = mockk<AudioManager>()
             every { context.getSystemService(AudioManager::class.java) } returns audioManager
             every { audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) } returns 15
+            every { audioManager.isVolumeFixed() } returns false
             every { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 8, AudioManager.FLAG_SHOW_UI) } just runs
             every { audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) } returns 8
 
@@ -59,6 +60,7 @@ class ActionExecutorVolumeTest {
             val audioManager = mockk<AudioManager>()
             every { context.getSystemService(AudioManager::class.java) } returns audioManager
             every { audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) } returns 15
+            every { audioManager.isVolumeFixed() } returns false
             every { audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) } returns 15
             every { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 15, AudioManager.FLAG_SHOW_UI) } just runs
 
@@ -74,6 +76,64 @@ class ActionExecutorVolumeTest {
             assertTrue(result is ActionResult.Success)
             verify(exactly = 1) {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 15, AudioManager.FLAG_SHOW_UI)
+            }
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `reports unsupported when the device fixes media volume`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val context = mockk<Context>()
+            val audioManager = mockk<AudioManager>()
+            every { context.getSystemService(AudioManager::class.java) } returns audioManager
+            every { audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) } returns 15
+            every { audioManager.isVolumeFixed() } returns true
+
+            val command = Command(
+                rawText = "set volume to 50 percent",
+                normalizedText = "set volume to 50 percent",
+                intent = MeemoIntent.SetVolume(percent = 50, delta = null),
+                confidence = 0.98f,
+                source = InputSource.TEXT
+            )
+            val result = ActionExecutor(context).execute(command)
+
+            assertTrue(result is ActionResult.Unsupported)
+            verify(exactly = 0) {
+                audioManager.setStreamVolume(any(), any(), any())
+            }
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `does not report success when the platform ignores a volume change`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val context = mockk<Context>()
+            val audioManager = mockk<AudioManager>()
+            every { context.getSystemService(AudioManager::class.java) } returns audioManager
+            every { audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) } returns 15
+            every { audioManager.isVolumeFixed() } returns false
+            every { audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) } returns 7
+            every { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 8, AudioManager.FLAG_SHOW_UI) } just runs
+
+            val command = Command(
+                rawText = "set volume to 50 percent",
+                normalizedText = "set volume to 50 percent",
+                intent = MeemoIntent.SetVolume(percent = 50, delta = null),
+                confidence = 0.98f,
+                source = InputSource.TEXT
+            )
+            val result = ActionExecutor(context).execute(command)
+
+            assertTrue(result is ActionResult.Unsupported)
+            verify(exactly = 1) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 8, AudioManager.FLAG_SHOW_UI)
             }
         } finally {
             Dispatchers.resetMain()
