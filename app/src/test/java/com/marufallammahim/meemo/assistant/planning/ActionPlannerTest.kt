@@ -7,6 +7,7 @@ import com.marufallammahim.meemo.apps.PackageResolver
 import com.marufallammahim.meemo.assistant.entity.ExtractedEntity
 import com.marufallammahim.meemo.assistant.intent.MeemoIntent
 import com.marufallammahim.meemo.domain.model.InstalledAppInfo
+import com.marufallammahim.meemo.domain.repository.MeemoRepository
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -15,7 +16,8 @@ import org.junit.Test
 
 class ActionPlannerTest {
     private val packageResolver = mockk<PackageResolver>()
-    private val planner = ActionPlanner(packageResolver)
+    private val repository = mockk<MeemoRepository>()
+    private val planner = ActionPlanner(packageResolver, repository)
 
     @Test
     fun `plans an exact application match`() = runTest {
