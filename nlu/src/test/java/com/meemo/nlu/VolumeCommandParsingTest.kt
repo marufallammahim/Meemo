@@ -38,6 +38,30 @@ class VolumeCommandParsingTest {
     }
 
     @Test
+    fun `parses turn up and turn down volume phrasing`() {
+        assertEquals(
+            MeemoIntent.SetVolume(percent = null, delta = 1),
+            parser.parse("turn up the volume", InputSource.TEXT).intent
+        )
+        assertEquals(
+            MeemoIntent.SetVolume(percent = null, delta = -1),
+            parser.parse("turn down volume", InputSource.TEXT).intent
+        )
+    }
+
+    @Test
+    fun `parses Bengali percentage words after the sound alias`() {
+        assertEquals(
+            MeemoIntent.SetVolume(percent = 50, delta = null),
+            parser.parse("সাউন্ড ৫০ শতাংশে সেট করো", InputSource.TEXT).intent
+        )
+        assertEquals(
+            MeemoIntent.SetVolume(percent = 50, delta = null),
+            parser.parse("সাউন্ড ৫০ পার্সেন্টে সেট করো", InputSource.TEXT).intent
+        )
+    }
+
+    @Test
     fun `clamps volume percentages and rejects oversized numeric tokens`() {
         assertEquals(
             MeemoIntent.SetVolume(percent = 100, delta = null),
