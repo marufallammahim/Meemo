@@ -20,6 +20,19 @@ This document is the manual test ledger for capability work. Each command must b
 
 Wake phrases such as “Hey Meemo” and polite filler such as “please” are removed before parsing. Common verb and device synonyms are canonicalized. Fuzzy intent matches carry lower confidence and are routed to confirmation when confidence is below 0.8.
 
+## Media volume commands
+
+| User text | Parsed intent | Expected behavior |
+| --- | --- | --- |
+| set volume to 50 percent | SetVolume(50) | Set the Android media stream to the nearest supported level and verify the result |
+| turn up the volume | SetVolume(+1) | Increase media volume by one platform step |
+| turn down volume | SetVolume(-1) | Decrease media volume by one platform step |
+| ভলিউম ৫০ সেট করো | SetVolume(50) | Accept Bengali digits and Bengali command wording |
+| সাউন্ড ৫০ শতাংশে সেট করো | SetVolume(50) | Accept the Bengali sound alias and percentage suffix |
+| volume komao | SetVolume(-1) | Accept the Banglish decrease phrase |
+
+Meemo reports success only when Android exposes the requested media-stream level after the update. Devices that fix media volume, or platforms that ignore a requested change, return an unsupported result instead of a false success.
+
 ## Saved automation routines
 
 The Memory & Aliases screen can create a sample routine. A routine is stored locally with a display name, trigger phrase, ordered steps, enabled state, and confirmation preference.
@@ -62,6 +75,7 @@ The Memory & Aliases screen can create a sample routine. A routine is stored loc
 - [ ] Browser launch resolves an HTTPS VIEW handler.
 - [ ] Settings commands open the matching Android settings page.
 - [ ] Torch reports unsupported when the device has no flash hardware.
+- [ ] Volume commands report the applied level; fixed-volume devices never receive a false success response.
 
 ## Privacy and permissions
 
