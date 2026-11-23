@@ -49,12 +49,12 @@ class ResponseGenerator @Inject constructor() {
                 val summary = if (useBengali) result.summaryBn else result.summaryEn
                 val reason = if (useBengali) result.reasonBn else result.reasonEn
                 GeneratedAssistantResponse(
-                    displayTitle = if (useBengali) "ব্যবহারকারীর পদক্ষেপ প্রয়োজন" else "Action Needed in Settings",
+                    displayTitle = if (useBengali) result.titleBn else result.titleEn,
                     displayBody = "$summary ($reason)",
                     spokenText = summary,
                     languageTag = langTag,
                     isError = false,
-                    outcomeBadge = "SETTINGS_OPENED"
+                    outcomeBadge = result.outcomeBadge
                 )
             }
             is ActionResult.PermissionRequired -> {
