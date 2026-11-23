@@ -77,6 +77,27 @@ class ResponseGeneratorTest {
     }
 
     @Test
+    fun `uses a routine specific title and badge for partial automation results`() {
+        val result = ActionResult.PartialSuccess(
+            summaryEn = "Routine 'Night mode' completed: 1 of 2 steps succeeded.",
+            summaryBn = "'Night mode' রুটিনে ২টির মধ্যে ১টি ধাপ সফল হয়েছে।",
+            reasonEn = "Steps needing attention: #1 (FAILED).",
+            reasonBn = "যেসব ধাপে মনোযোগ প্রয়োজন: #1 (FAILED)।",
+            titleEn = "Routine needs attention",
+            titleBn = "রুটিনে পদক্ষেপ প্রয়োজন",
+            outcomeBadge = "ROUTINE_PARTIAL"
+        )
+
+        val english = generator.generate(result, AppLanguageMode.ENGLISH, DetectedLanguage.ENGLISH)
+        val bengali = generator.generate(result, AppLanguageMode.BENGALI, DetectedLanguage.BENGALI)
+
+        assertEquals("Routine needs attention", english.displayTitle)
+        assertEquals("ROUTINE_PARTIAL", english.outcomeBadge)
+        assertEquals("রুটিনে পদক্ষেপ প্রয়োজন", bengali.displayTitle)
+        assertEquals("ROUTINE_PARTIAL", bengali.outcomeBadge)
+    }
+
+    @Test
     fun `cancelled response does not produce spoken output`() {
         val response = generator.generate(
             ActionResult.Cancelled(messageEn = "Cancelled.", messageBn = "বাতিল হয়েছে।"),

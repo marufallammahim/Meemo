@@ -23,7 +23,10 @@ sealed interface ActionResult {
         val summaryEn: String,
         val summaryBn: String,
         val reasonEn: String,
-        val reasonBn: String
+        val reasonBn: String,
+        val titleEn: String = "Action Needed in Settings",
+        val titleBn: String = "ব্যবহারকারীর পদক্ষেপ প্রয়োজন",
+        val outcomeBadge: String = "SETTINGS_OPENED"
     ) : ActionResult {
         override val outcomeCode: String = "PARTIAL_SUCCESS"
     }
