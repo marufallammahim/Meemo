@@ -1,6 +1,7 @@
 package com.marufallammahim.meemo.notifications
 
 import com.marufallammahim.meemo.actions.ActionResult
+import com.marufallammahim.meemo.core.utilities.TimeProvider
 import com.marufallammahim.meemo.domain.model.AppLanguageMode
 import com.marufallammahim.meemo.domain.repository.MeemoRepository
 import com.marufallammahim.meemo.tts.TtsController
@@ -10,19 +11,24 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Manages a bounded transient in-memory queue (max 15 items) for notification read-aloud.
- * Never persists notification text to Room or disk.
+ * Manages a bounded transient in-memory queue (max 15 items, max age 15 minutes)
+ * for notification read-aloud. Never persists notification text to Room or disk.
  */
 @Singleton
 class NotificationReadAloud @Inject constructor(
     private val policy: NotificationPolicy,
     private val ttsController: TtsController,
-    private val repository: MeemoRepository
+    private val repository: MeemoRepository,
+    private val timeProvider: TimeProvider
 ) {
     private val transientQueue = ArrayDeque<TransientNotificationItem>()
 
     @Synchronized
     fun enqueueTransient(item: TransientNotificationItem) {
+        val nowMillis = timeProvider.nowMillis()
+        pruneExpiredItems(nowMillis)
+        if (!isRecent(item.receivedAtMs, nowMillis)) return
+
         while (transientQueue.size >= MAX_TRANSIENT_ITEMS) {
             transientQueue.pollFirst()
         }
@@ -36,6 +42,11 @@ class NotificationReadAloud @Inject constructor(
 
     suspend fun handleIncomingNotification(item: TransientNotificationItem) {
         val prefs = repository.userPreferencesFlow.first()
+        if (!prefs.notificationReadAloudEnabled) {
+            clearTransientQueue()
+            return
+        }
+
         val signature = "${item.senderOrTitle}:${item.messageBody}"
         if (!policy.shouldProcessNotification(item.packageName, signature, prefs)) {
             return
@@ -67,10 +78,26 @@ class NotificationReadAloud @Inject constructor(
 
     suspend fun readQueuedNotificationsSummary(): ActionResult {
         val prefs = repository.userPreferencesFlow.first()
-        val snapshot: List<TransientNotificationItem>
-        synchronized(this) {
-            snapshot = transientQueue.toList()
+        val snapshot = synchronized(this) {
+            pruneExpiredItems(timeProvider.nowMillis())
+            if (!prefs.notificationReadAloudEnabled) {
+                transientQueue.clear()
+                emptyList()
+            } else {
+                // Revalidate queued entries against current privacy settings, not only the
+                // settings that were active when each notification arrived.
+                transientQueue.removeIf { it.packageName !in prefs.allowedNotificationPackages }
+                if (prefs.notificationAnnounceSenderOnly) {
+                    val redactedItems = transientQueue.map {
+                        it.copy(senderOrTitle = "", messageBody = "")
+                    }
+                    transientQueue.clear()
+                    transientQueue.addAll(redactedItems)
+                }
+                transientQueue.toList()
+            }
         }
+
         if (snapshot.isEmpty()) {
             return ActionResult.Success(
                 summaryEn = "No recent unread notifications in the active session queue.",
@@ -88,7 +115,21 @@ class NotificationReadAloud @Inject constructor(
         )
     }
 
+    private fun pruneExpiredItems(nowMillis: Long) {
+        val iterator = transientQueue.iterator()
+        while (iterator.hasNext()) {
+            val receivedAtMs = iterator.next().receivedAtMs
+            if (!isRecent(receivedAtMs, nowMillis)) {
+                iterator.remove()
+            }
+        }
+    }
+
+    private fun isRecent(receivedAtMs: Long, nowMillis: Long): Boolean =
+        receivedAtMs <= nowMillis && nowMillis - receivedAtMs <= MAX_TRANSIENT_AGE_MS
+
     companion object {
         private const val MAX_TRANSIENT_ITEMS = 15
+        const val MAX_TRANSIENT_AGE_MS = 15 * 60 * 1000L
     }
 }
