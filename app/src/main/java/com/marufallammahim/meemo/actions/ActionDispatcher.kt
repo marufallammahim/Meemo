@@ -68,19 +68,27 @@ class ActionDispatcher @Inject constructor(
             }
             is MeemoAction.ExecuteAutomationRoutine -> {
                 val results = action.steps.map { step -> dispatch(step) }
-                val allSucceeded = results.all { it is ActionResult.Success }
-                if (allSucceeded) {
+                val successCount = results.count { it is ActionResult.Success }
+                if (successCount == results.size) {
                     ActionResult.Success(
                         summaryEn = "Executed routine '${action.routineName}' (${results.size} steps).",
                         summaryBn = "'${action.routineName}' রুটিন সম্পন্ন হয়েছে (${results.size}টি ধাপ)।",
                         verifiedBySystem = true
                     )
                 } else {
+                    val stepsNeedingAttention = results.withIndex()
+                        .filter { (_, result) -> result !is ActionResult.Success }
+                        .joinToString(", ") { (index, result) ->
+                            "#${index + 1} (${result.outcomeCode})"
+                        }
                     ActionResult.PartialSuccess(
-                        summaryEn = "Routine '${action.routineName}' completed with partial results.",
-                        summaryBn = "'${action.routineName}' রুটিন আংশিকভাবে সম্পন্ন হয়েছে।",
-                        reasonEn = "One or more steps required user interaction or permission",
-                        reasonBn = "এক বা একাধিক ধাপে অনুমতি প্রয়োজন"
+                        summaryEn = "Routine '${action.routineName}' completed: $successCount of ${results.size} steps succeeded.",
+                        summaryBn = "'${action.routineName}' রুটিনে ${results.size}টির মধ্যে $successCountটি ধাপ সফল হয়েছে।",
+                        reasonEn = "Steps needing attention: $stepsNeedingAttention.",
+                        reasonBn = "যেসব ধাপে মনোযোগ প্রয়োজন: $stepsNeedingAttention।",
+                        titleEn = "Routine needs attention",
+                        titleBn = "রুটিনে পদক্ষেপ প্রয়োজন",
+                        outcomeBadge = "ROUTINE_PARTIAL"
                     )
                 }
             }
