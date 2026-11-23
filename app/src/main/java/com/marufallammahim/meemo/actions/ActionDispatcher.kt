@@ -61,7 +61,8 @@ class ActionDispatcher @Inject constructor(
                     requiresConfirmation = false
                 )
                 ActionResult.Success(
-                    summaryEn = "Saved alias '${action.triggerPhrase}' -> ${action.targetAppLabel}.",
+                    summaryEn = "Saved alias '${action.triggerPhrase}' -> " +
+                        "${action.targetAppLabel}.",
                     summaryBn = "'${action.triggerPhrase}' অ্যালিয়াসটি ${action.targetAppLabel}-এর জন্য সংরক্ষণ করা হয়েছে।",
                     verifiedBySystem = true
                 )
@@ -82,8 +83,10 @@ class ActionDispatcher @Inject constructor(
                             "#${index + 1} (${result.outcomeCode})"
                         }
                     ActionResult.PartialSuccess(
-                        summaryEn = "Routine '${action.routineName}' completed: $successCount of ${results.size} steps succeeded.",
-                        summaryBn = "'${action.routineName}' রুটিনে ${results.size}টির মধ্যে ${successCount}টি ধাপ সফল হয়েছে।",
+                        summaryEn = "Routine '${action.routineName}' completed: " +
+                            "$successCount of ${results.size} steps succeeded",
+                        summaryBn = "'${action.routineName}' রুটিনে ${results.size}টির মধ্যে " +
+                            "${successCount}টি ধাপ সফল হয়েছে।",
                         reasonEn = "Steps needing attention: $stepsNeedingAttention.",
                         reasonBn = "যেসব ধাপে মনোযোগ প্রয়োজন: $stepsNeedingAttention।",
                         titleEn = "Routine needs attention",
@@ -100,8 +103,10 @@ class ActionDispatcher @Inject constructor(
                     userEnabledRoot = prefs.rootFeaturesEnabled
                 )) {
                     is ResultWrapper.Success -> ActionResult.Success(
-                        summaryEn = "Root diagnostic (${res.data.commandId}) succeeded in ${res.data.durationMs}ms: ${res.data.stdout.take(180)}",
-                        summaryBn = "রুট ডায়াগনস্টিক (${res.data.commandId}) সম্পন্ন হয়েছে: ${res.data.stdout.take(180)}",
+                        summaryEn = "Root diagnostic (${res.data.commandId}) succeeded in " +
+                            "${res.data.durationMs}ms: ${res.data.stdout.take(180)}",
+                        summaryBn = "রুট ডায়াগনস্টিক (${res.data.commandId}) সম্পন্ন হয়েছে: " +
+                            res.data.stdout.take(180),
                         verifiedBySystem = true
                     )
                     is ResultWrapper.Failure -> ActionResult.Failed(res.error)
