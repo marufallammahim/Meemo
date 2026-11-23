@@ -63,7 +63,8 @@ class ActionDispatcher @Inject constructor(
                 ActionResult.Success(
                     summaryEn = "Saved alias '${action.triggerPhrase}' -> " +
                         "${action.targetAppLabel}.",
-                    summaryBn = "'${action.triggerPhrase}' অ্যালিয়াসটি ${action.targetAppLabel}-এর জন্য সংরক্ষণ করা হয়েছে।",
+                    summaryBn = "'${action.triggerPhrase}' অ্যালিয়াসটি " +
+                        "${action.targetAppLabel}-এর জন্য সংরক্ষণ করা হয়েছে।",
                     verifiedBySystem = true
                 )
             }
@@ -84,7 +85,7 @@ class ActionDispatcher @Inject constructor(
                         }
                     ActionResult.PartialSuccess(
                         summaryEn = "Routine '${action.routineName}' completed: " +
-                            "$successCount of ${results.size} steps succeeded",
+                            "$successCount of ${results.size} steps succeeded.",
                         summaryBn = "'${action.routineName}' রুটিনে ${results.size}টির মধ্যে " +
                             "${successCount}টি ধাপ সফল হয়েছে।",
                         reasonEn = "Steps needing attention: $stepsNeedingAttention.",
