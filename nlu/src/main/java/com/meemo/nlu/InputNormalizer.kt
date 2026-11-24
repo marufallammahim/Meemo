@@ -1,12 +1,16 @@
 package com.meemo.nlu
 
+import java.text.Normalizer
 import java.util.Locale
 
 class InputNormalizer {
     fun normalize(input: String): String {
+        // Canonicalize Unicode before matching so equivalent Bengali spellings
+        // from different keyboards/ASR engines produce the same command text.
+        val normalized = Normalizer.normalize(input, Normalizer.Form.NFC)
         // Trim before anchored wake-phrase matching so leading ASR whitespace
         // cannot prevent Bengali greetings from being removed.
-        val lower = input.trim().lowercase(Locale.ROOT)
+        val lower = normalized.trim().lowercase(Locale.ROOT)
         val withoutWakePhrase = lower
             .replace(Regex("\\b(hey\\s+meemo|hello\\s+meemo|meemo)\\b"), " ")
             .replace(Regex("^(?:হ্যালো|হাই|ওকে)[\\s,।:!]*মিমো[\\s,।:!]*"), " ")

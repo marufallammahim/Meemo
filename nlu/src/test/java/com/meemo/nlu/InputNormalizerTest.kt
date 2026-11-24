@@ -1,5 +1,6 @@
 package com.meemo.nlu
 
+import java.text.Normalizer
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -27,5 +28,15 @@ class InputNormalizerTest {
     fun preservesBengaliCombiningMarks() {
         assertEquals("খুলুন", InputNormalizer().normalize("খুলুন"))
         assertEquals("ব্যাটারি", InputNormalizer().normalize("ব্যাটারি"))
+    }
+
+    @Test
+    fun removesBengaliWakePhraseInCanonicallyDecomposedTranscript() {
+        val decomposed = Normalizer.normalize(
+            "হ্যালো মিমো, ব্যাটারি কত?",
+            Normalizer.Form.NFD
+        )
+
+        assertEquals("ব্যাটারি কত", InputNormalizer().normalize(decomposed))
     }
 }
