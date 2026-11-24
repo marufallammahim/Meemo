@@ -46,7 +46,7 @@ class WakeWordDetector @Inject constructor(
 
     private companion object {
         val WAKE_PHRASE_PATTERN = Regex(
-            """^(?:(?:hello|hey|hi)[\s,.;:!?।॥]+meemo|(?:হ্যালো|হাই)[\s,.;:!?।॥]+মিমো|মিমো)(?=$|[\s,.;:!?।॥])""",
+            """^(?:(?:hello|hey)[\s,.;:!?।॥]+meemo|(?:হ্যালো|হাই|ওকে)[\s,.;:!?।॥]+মিমো|মিমো)(?=$|[\s,.;:!?।॥])""",
             RegexOption.IGNORE_CASE
         )
     }
