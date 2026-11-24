@@ -16,6 +16,7 @@ class WakeWordDetectorTest {
         assertTrue(detector.containsWakePhrase("Hello Meemo! battery status"))
         assertTrue(detector.containsWakePhrase("হ্যালো, মিমো। ব্যাটারি কত?"))
         assertTrue(detector.containsWakePhrase("হাই মিমো, ব্রাউজার খোলো"))
+        assertTrue(detector.containsWakePhrase("ওকে মিমো, ব্যাটারি কত?"))
         assertTrue(detector.containsWakePhrase("মিমো, ভলিউম বাড়াও"))
     }
 
