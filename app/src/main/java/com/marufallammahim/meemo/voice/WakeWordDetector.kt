@@ -41,7 +41,7 @@ class WakeWordDetector @Inject constructor(
     fun containsWakePhrase(transcript: String): Boolean {
         val normalized = Normalizer.normalize(transcript.trim(), Normalizer.Form.NFC)
             .lowercase(Locale.ROOT)
-        return WAKE_PHRASE_PATTERN.containsMatchIn(normalized)
+        return wakePhrasePattern.containsMatchIn(normalized)
     }
 
     private companion object {
