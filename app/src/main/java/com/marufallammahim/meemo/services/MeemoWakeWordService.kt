@@ -112,7 +112,7 @@ class MeemoWakeWordService : Service() {
             .setContentText(getString(R.string.wake_word_notification_body))
             .setContentIntent(pendingOpen)
             .setOngoing(true)
-            .addAction(0, "Stop", pendingStop)
+            .addAction(0, getString(R.string.wake_word_notification_stop_action), pendingStop)
             .build()
     }
 

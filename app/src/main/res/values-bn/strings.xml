@@ -21,4 +21,5 @@
     <string name="nav_settings">গোপনীয়তা ও সেটিংস</string>
     <string name="wake_word_notification_title">মিমো ওয়েক-ওয়ার্ড সক্রিয়</string>
     <string name="wake_word_notification_body">"হ্যালো মিমো" শোনার জন্য সক্রিয়। যেকোনো সময় বন্ধ করতে ট্যাপ করুন।</string>
+    <string name="wake_word_notification_stop_action">বন্ধ করুন</string>
 </resources>
