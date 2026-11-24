@@ -4,6 +4,8 @@ import com.marufallammahim.meemo.core.permissions.PermissionChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.text.Normalizer
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -37,10 +39,15 @@ class WakeWordDetector @Inject constructor(
     }
 
     fun containsWakePhrase(transcript: String): Boolean {
-        val lower = transcript.trim().lowercase()
-        return lower.startsWith("hello meemo") ||
-            lower.startsWith("hey meemo") ||
-            lower.startsWith("হ্যালো মিমো") ||
-            lower.startsWith("মিমো")
+        val normalized = Normalizer.normalize(transcript.trim(), Normalizer.Form.NFC)
+            .lowercase(Locale.ROOT)
+        return WAKE_PHRASE_PATTERN.containsMatchIn(normalized)
+    }
+
+    private companion object {
+        val WAKE_PHRASE_PATTERN = Regex(
+            """^(?:(?:hello|hey|hi)[\s,.;:!?।॥]+meemo|(?:হ্যালো|হাই)[\s,.;:!?।॥]+মিমো|মিমো)(?=$|[\s,.;:!?।॥])""",
+            RegexOption.IGNORE_CASE
+        )
     }
 }
