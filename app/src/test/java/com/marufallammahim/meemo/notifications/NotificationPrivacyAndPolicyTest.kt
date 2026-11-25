@@ -50,6 +50,21 @@ class NotificationPrivacyAndPolicyTest {
     }
 
     @Test
+    fun `treats signatures from the future as expired after a wall clock correction`() {
+        val policy = NotificationPolicy(fakeTime)
+
+        assertFalse(policy.isDuplicateWithinWindow("com.whatsapp", "same message"))
+        currentMillis += 5_000L
+        assertTrue(policy.isDuplicateWithinWindow("com.whatsapp", "same message"))
+
+        // A backward clock correction must not leave the future timestamp suppressing
+        // this notification until wall time catches up again.
+        currentMillis -= 10_000L
+        assertFalse(policy.isDuplicateWithinWindow("com.whatsapp", "same message"))
+        assertTrue(policy.isDuplicateWithinWindow("com.whatsapp", "same message"))
+    }
+
+    @Test
     fun `bounds the duplicate cache while retaining recent signatures`() {
         val policy = NotificationPolicy(fakeTime)
 
@@ -77,7 +92,7 @@ class NotificationPrivacyAndPolicyTest {
     }
 
     @Test
-    fun `blocks notifications during overnight quiet hours and from non-allowlisted apps`() {
+    fun `blocks notifications during overnight quiet hours and from non allowlisted apps`() {
         val policy = NotificationPolicy(fakeTime)
         val prefs = UserPreferences(
             notificationReadAloudEnabled = true,
@@ -138,6 +153,7 @@ class NotificationPrivacyAndPolicyTest {
         assertFalse(redactedLog.contains("Private text"))
         assertTrue(redactedLog.contains("[REDACTED_TOKEN]"))
     }
+
     @Test
     fun `overnight quiet hours include start and exclude end boundaries`() {
         val policy = NotificationPolicy(fakeTime)
@@ -199,7 +215,6 @@ class NotificationPrivacyAndPolicyTest {
         )
     }
 
-
     @Test
     fun `daytime quiet hours include start and exclude end boundaries`() {
         val policy = NotificationPolicy(fakeTime)
@@ -220,6 +235,4 @@ class NotificationPrivacyAndPolicyTest {
         currentHour = 17
         assertFalse(policy.isWithinQuietHours(prefs))
     }
-
-
 }
