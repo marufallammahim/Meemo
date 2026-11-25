@@ -3,6 +3,7 @@ package com.marufallammahim.meemo.assistant.parser
 import com.marufallammahim.meemo.assistant.command.CommandInputSource
 import com.marufallammahim.meemo.assistant.command.NormalizedCommand
 import com.marufallammahim.meemo.core.utilities.TimeProvider
+import java.text.Normalizer
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,7 +21,9 @@ class CommandNormalizer @Inject constructor(
         rawInput: String,
         source: CommandInputSource = CommandInputSource.TEXT
     ): NormalizedCommand {
-        val trimmed = rawInput.trim()
+        // Speech services can insert punctuation between wake-phrase words and may return
+        // canonically decomposed Bengali text. Normalize before detection and prefix removal.
+        val trimmed = Normalizer.normalize(rawInput.trim(), Normalizer.Form.NFC)
         val detectedLang = languageResolver.detectLanguage(trimmed)
         val asciiDigits = languageResolver.convertBengaliDigitsToAscii(trimmed)
 
@@ -55,9 +58,9 @@ class CommandNormalizer @Inject constructor(
 
     companion object {
         private val WAKE_PHRASE_PATTERNS = listOf(
-            Regex("(?i)^(hello|hey|hi|ok|okay)\\s+meemo[,.:!\\s]*"),
+            Regex("(?i)^(hello|hey|hi|ok|okay)[\\s,.;:!?।॥]+meemo[,.;:!\\s।॥]*"),
             Regex("(?i)^meemo[,.:!\\s]+"),
-            Regex("^(হ্যালো|হাই|ওকে|এই)\\s*মিমো[,।:!\\s]*"),
+            Regex("^(হ্যালো|হাই|ওকে|এই)[\\s,.;:!?।॥]+মিমো[,.;:!\\s।॥]*"),
             Regex("^মিমো[,।:!\\s]+")
         )
     }
