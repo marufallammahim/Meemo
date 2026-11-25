@@ -3,6 +3,7 @@ package com.marufallammahim.meemo.assistant.parser
 import com.marufallammahim.meemo.assistant.command.CommandInputSource
 import com.marufallammahim.meemo.assistant.command.DetectedLanguage
 import com.marufallammahim.meemo.core.utilities.TimeProvider
+import java.text.Normalizer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -37,8 +38,25 @@ class CommandNormalizerTest {
     }
 
     @Test
-    fun `strips supported English wake phrase variants case-insensitively`() {
-        listOf("Hey Meemo, open Chrome", "HI MEEMO! open Chrome", "Okay Meemo: open Chrome").forEach { input ->
+    fun `strips supported English wake phrase variants case insensitively`() {
+        listOf(
+            "Hey Meemo, open Chrome",
+            "HI MEEMO! open Chrome",
+            "Okay Meemo: open Chrome"
+        ).forEach { input ->
+            val result = normalizer.normalize(input)
+            assertTrue(result.wakePhraseDetected)
+            assertEquals("open Chrome", result.normalizedText)
+        }
+    }
+
+    @Test
+    fun `strips speech recognition punctuation between English wake phrase words`() {
+        listOf(
+            "Hey, Meemo, open Chrome",
+            "Hello! Meemo: open Chrome",
+            "Okay. Meemo; open Chrome"
+        ).forEach { input ->
             val result = normalizer.normalize(input)
             assertTrue(result.wakePhraseDetected)
             assertEquals("open Chrome", result.normalizedText)
@@ -51,6 +69,27 @@ class CommandNormalizerTest {
         assertTrue(result.wakePhraseDetected)
         assertEquals("ভলিউম 50 শতাংশে সেট করো", result.normalizedText)
         assertEquals(DetectedLanguage.BENGALI, result.detectedLanguage)
+    }
+
+    @Test
+    fun `strips Bengali speech recognition punctuation between wake phrase words`() {
+        val result = normalizer.normalize("হ্যালো, মিমো। ব্যাটারি কত?")
+        assertTrue(result.wakePhraseDetected)
+        assertEquals("ব্যাটারি কত", result.normalizedText)
+    }
+
+    @Test
+    fun `normalizes decomposed Bengali text while preserving the raw transcript`() {
+        val raw = Normalizer.normalize(
+            "হ্যালো মিমো, ব্যাটারি কত?",
+            Normalizer.Form.NFD
+        )
+
+        val result = normalizer.normalize(raw)
+
+        assertEquals(raw, result.rawText)
+        assertTrue(result.wakePhraseDetected)
+        assertEquals("ব্যাটারি কত", result.normalizedText)
     }
 
     @Test
@@ -76,7 +115,7 @@ class CommandNormalizerTest {
     }
 
     @Test
-    fun `handles empty and whitespace-only input safely`() {
+    fun `handles empty and whitespace only input safely`() {
         val result = normalizer.normalize("   ...   ")
         assertEquals("", result.normalizedText)
     }
@@ -96,6 +135,4 @@ class CommandNormalizerTest {
             languageResolver.convertBengaliDigitsToAscii("০১২৩৪৫৬৭৮৯ - ৫০%")
         )
     }
-
-
 }
