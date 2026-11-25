@@ -1,6 +1,7 @@
 package com.marufallammahim.meemo.assistant.parser
 
 import com.marufallammahim.meemo.assistant.command.DetectedLanguage
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,10 +24,8 @@ class LanguageResolver @Inject constructor() {
         if (hasBengaliScript && hasLatinScript) return DetectedLanguage.MIXED_BANGLISH
         if (hasBengaliScript) return DetectedLanguage.BENGALI
 
-        val lower = input.lowercase()
-        val hasBanglishKeywords = BANGLISH_MARKERS.any { marker ->
-            Regex("\\b$marker\\b").containsMatchIn(lower)
-        }
+        val lower = input.lowercase(Locale.ROOT)
+        val hasBanglishKeywords = BANGLISH_MARKER_PATTERNS.any { it.containsMatchIn(lower) }
         return if (hasBanglishKeywords) DetectedLanguage.MIXED_BANGLISH else DetectedLanguage.ENGLISH
     }
 
@@ -54,7 +53,11 @@ class LanguageResolver @Inject constructor() {
     companion object {
         private val BANGLISH_MARKERS = listOf(
             "kholo", "khulun", "chalu", "bondho", "koro", "korun",
-            "koto", "baki", "komao", "barao", "shono", "bolo"
+            "koto", "baki", "komao", "barao", "shono", "bolo",
+            "chalao", "bajao", "thamaw", "thamao", "porer", "ager"
         )
+        private val BANGLISH_MARKER_PATTERNS = BANGLISH_MARKERS.map { marker ->
+            Regex("\\b$marker\\b")
+        }
     }
 }

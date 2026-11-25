@@ -112,6 +112,16 @@ class DeterministicIntentMatcherTest {
     }
 
     @Test
+    fun `matches Banglish media transport commands`() {
+        assertEquals(MeemoIntent.MEDIA_PLAY, matcher.matchIntent(normalizer.normalize("gaan chalao")).intent)
+        assertEquals(MeemoIntent.MEDIA_PLAY, matcher.matchIntent(normalizer.normalize("gan bajao")).intent)
+        assertEquals(MeemoIntent.MEDIA_PAUSE, matcher.matchIntent(normalizer.normalize("music bondho koro")).intent)
+        assertEquals(MeemoIntent.MEDIA_PAUSE, matcher.matchIntent(normalizer.normalize("gaan thamaw")).intent)
+        assertEquals(MeemoIntent.MEDIA_NEXT, matcher.matchIntent(normalizer.normalize("porer gaan")).intent)
+        assertEquals(MeemoIntent.MEDIA_PREVIOUS, matcher.matchIntent(normalizer.normalize("ager gan")).intent)
+    }
+
+    @Test
     fun `returns UNKNOWN for empty and whitespace-only commands`() {
         assertEquals(MeemoIntent.UNKNOWN, matcher.matchIntent(normalizer.normalize("")).intent)
         assertEquals(MeemoIntent.UNKNOWN, matcher.matchIntent(normalizer.normalize("   ")).intent)
