@@ -22,4 +22,6 @@
     <string name="wake_word_notification_title">Meemo Wake-Word Active</string>
     <string name="wake_word_notification_body">Listening for "Hello Meemo" in foreground. Tap to stop at any time.</string>
     <string name="wake_word_notification_stop_action">Stop</string>
+    <string name="wake_word_notification_channel_name">Meemo wake-word detection</string>
+    <string name="wake_word_notification_channel_description">Shown while the foreground wake-word session is active.</string>
 </resources>

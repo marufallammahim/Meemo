@@ -79,10 +79,10 @@ class MeemoWakeWordService : Service() {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Meemo Foreground Wake-Word",
+            getString(R.string.wake_word_notification_channel_name),
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Displays whenever Meemo wake-word detection is active"
+            description = getString(R.string.wake_word_notification_channel_description)
         }
         manager.createNotificationChannel(channel)
     }
