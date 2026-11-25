@@ -19,6 +19,7 @@ data class TransientNotificationItem(
 /**
  * Enforces notification privacy, package allowlist, quiet hours, and duplicate suppression.
  * Notification hashes expire after 60 seconds and the in-memory cache has a fixed upper bound.
+ * Clock corrections invalidate future-dated signatures instead of suppressing new notifications.
  * Raw notification bodies are never stored on disk.
  */
 @Singleton
@@ -57,7 +58,8 @@ class NotificationPolicy @Inject constructor(
         val hash = sha256("$packageName|$content")
         synchronized(recentHashes) {
             recentHashes.entries.removeIf { (_, timestamp) ->
-                (now - timestamp) > DUPLICATE_WINDOW_MS
+                val age = now - timestamp
+                age < 0L || age > DUPLICATE_WINDOW_MS
             }
 
             // Access-order keeps frequently repeated signatures from being evicted first.
@@ -66,7 +68,9 @@ class NotificationPolicy @Inject constructor(
                 val oldestKey = recentHashes.entries.iterator().next().key
                 recentHashes.remove(oldestKey)
             }
-            return previous != null && (now - previous) <= DUPLICATE_WINDOW_MS
+            return previous != null &&
+                previous <= now &&
+                now - previous <= DUPLICATE_WINDOW_MS
         }
     }
 
