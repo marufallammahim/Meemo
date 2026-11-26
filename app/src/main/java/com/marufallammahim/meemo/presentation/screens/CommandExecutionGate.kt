@@ -1,8 +1,7 @@
 package com.marufallammahim.meemo.presentation.screens
 
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.sync.Mutex
 
 /** Serializes assistant actions while retaining commands submitted during an active turn. */
 internal class CommandExecutionGate {
@@ -15,7 +14,12 @@ internal class CommandExecutionGate {
     ) {
         onPendingChanged(pendingCommands.incrementAndGet() > 0)
         try {
-            mutex.withLock { block() }
+            mutex.lock()
+            try {
+                block()
+            } finally {
+                mutex.unlock()
+            }
         } finally {
             onPendingChanged(pendingCommands.decrementAndGet() > 0)
         }
