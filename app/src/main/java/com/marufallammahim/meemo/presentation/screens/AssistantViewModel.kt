@@ -110,7 +110,13 @@ class AssistantViewModel @Inject constructor(
                             )
                         }
                     }
-                    VoiceRecognitionState.Idle -> Unit
+                    VoiceRecognitionState.Idle -> {
+                        localState.update { current ->
+                            current.copy(
+                                executionState = executionStateAfterVoiceIdle(current.executionState)
+                            )
+                        }
+                    }
                 }
             }
         }
