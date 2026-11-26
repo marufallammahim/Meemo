@@ -224,14 +224,12 @@ class AssistantViewModel @Inject constructor(
 
     private fun launchCommand(block: suspend () -> Unit) {
         viewModelScope.launch {
-            if (!commandExecutionGate.tryEnter()) return@launch
-            localState.update { it.copy(isCommandInProgress = true) }
-            try {
-                block()
-            } finally {
-                commandExecutionGate.leave()
-                localState.update { it.copy(isCommandInProgress = false) }
-            }
+            commandExecutionGate.runExclusive(
+                onPendingChanged = { isPending ->
+                    localState.update { it.copy(isCommandInProgress = isPending) }
+                },
+                block = block
+            )
         }
     }
 
