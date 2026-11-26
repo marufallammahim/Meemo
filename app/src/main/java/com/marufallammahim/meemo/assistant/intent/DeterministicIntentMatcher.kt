@@ -158,22 +158,26 @@ class DeterministicIntentMatcher @Inject constructor() {
 
         private val MEDIA_PLAY_PATTERNS = listOf(
             Regex("^(play|resume)(\\s+music|\\s+media|\\s+song|\\s+audio)?$"),
-            Regex("^(গান চালাও|মিডিয়া চালাও|প্লে করো)$")
+            Regex("^(গান চালাও|মিডিয়া চালাও|প্লে করো)$"),
+            Regex("^(gaan|gan|music)\\s+(chalao|bajao|chalu koro)$")
         )
 
         private val MEDIA_PAUSE_PATTERNS = listOf(
             Regex("^(pause)(\\s+music|\\s+media|\\s+song|\\s+audio)?$"),
-            Regex("^(গান থামাও|পজ করো|মিডিয়া থামাও)$")
+            Regex("^(গান থামাও|পজ করো|মিডিয়া থামাও)$"),
+            Regex("^(gaan|gan|music)\\s+(thamaw|thamao|bondho koro)$")
         )
 
         private val MEDIA_NEXT_PATTERNS = listOf(
             Regex("^(next|skip)(\\s+track|\\s+song|\\s+media)?$"),
-            Regex("^(পরের গান|নেক্সট গান|পরবর্তী গান)$")
+            Regex("^(পরের গান|নেক্সট গান|পরবর্তী গান)$"),
+            Regex("^(porer|next)\\s+(gaan|gan|song)$")
         )
 
         private val MEDIA_PREV_PATTERNS = listOf(
             Regex("^(previous|prev)(\\s+track|\\s+song|\\s+media)?$"),
-            Regex("^(আগের গান|পূর্ববর্তী গান)$")
+            Regex("^(আগের গান|পূর্ববর্তী গান)$"),
+            Regex("^(ager|previous|prev)\\s+(gaan|gan|song)$")
         )
 
         private val READ_NOTIFICATIONS_PATTERNS = listOf(

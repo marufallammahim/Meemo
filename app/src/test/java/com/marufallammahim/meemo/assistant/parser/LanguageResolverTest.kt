@@ -21,6 +21,15 @@ class LanguageResolverTest {
     }
 
     @Test
+    fun `detects Banglish media transport verbs as whole words`() {
+        listOf("gaan chalao", "gan bajao", "music bondho koro", "gaan thamaw", "porer gaan", "ager gan")
+            .forEach { input ->
+                assertEquals(DetectedLanguage.MIXED_BANGLISH, resolver.detectLanguage(input))
+            }
+        assertEquals(DetectedLanguage.ENGLISH, resolver.detectLanguage("the word chalaover is not a command"))
+    }
+
+    @Test
     fun `converts every Bengali digit without changing other characters`() {
         assertEquals(
             "0123456789 - 10%",

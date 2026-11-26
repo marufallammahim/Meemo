@@ -33,6 +33,17 @@ Wake phrases such as “Hey Meemo” and polite filler such as “please” are 
 
 Meemo reports success only when Android exposes the requested media-stream level after the update. Devices that fix media volume, or platforms that ignore a requested change, return an unsupported result instead of a false success.
 
+## Banglish media transport commands
+
+| User text | Parsed intent | Expected behavior |
+| --- | --- | --- |
+| gaan chalao / gan bajao | MediaPlay | Start or resume the active media session |
+| gaan thamaw / music bondho koro | MediaPause | Pause the active media session |
+| porer gaan / next gan | MediaNext | Skip to the next track |
+| ager gaan / ager gan | MediaPrevious | Return to the previous track |
+
+These phrases are matched as complete commands; Banglish action words are also used by language detection so the assistant can choose the appropriate response language.
+
 ## Saved automation routines
 
 The Memory & Aliases screen can create a sample routine. A routine is stored locally with a display name, trigger phrase, ordered steps, enabled state, and confirmation preference.
