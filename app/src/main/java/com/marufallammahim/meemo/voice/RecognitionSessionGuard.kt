@@ -8,13 +8,39 @@ import java.util.concurrent.atomic.AtomicLong
  */
 internal class RecognitionSessionGuard {
     private val generation = AtomicLong(0L)
+    private val stopRequestedSession = AtomicLong(NO_SESSION)
 
-    fun beginSession(): Long = generation.incrementAndGet()
+    fun beginSession(): Long {
+        val sessionId = generation.incrementAndGet()
+        stopRequestedSession.set(NO_SESSION)
+        return sessionId
+    }
 
     fun isCurrentSession(sessionId: Long): Boolean = generation.get() == sessionId
 
-    fun invalidateCurrentSession(): Long = generation.incrementAndGet()
+    fun requestStopForCurrentSession(): Boolean {
+        val sessionId = generation.get()
+        if (sessionId == NO_SESSION) return false
+
+        stopRequestedSession.set(sessionId)
+        if (generation.get() == sessionId) return true
+
+        stopRequestedSession.compareAndSet(sessionId, NO_SESSION)
+        return false
+    }
+
+    fun consumeStopRequest(sessionId: Long): Boolean =
+        stopRequestedSession.compareAndSet(sessionId, NO_SESSION)
+
+    fun invalidateCurrentSession(): Long {
+        stopRequestedSession.set(NO_SESSION)
+        return generation.incrementAndGet()
+    }
 
     fun finishSession(sessionId: Long): Boolean =
         generation.compareAndSet(sessionId, sessionId + 1L)
+
+    private companion object {
+        const val NO_SESSION = -1L
+    }
 }
