@@ -22,7 +22,7 @@ class CommandExecutionGateTest {
 
         val first = launch {
             gate.runExclusive(
-                onPendingChanged = pendingStates::add
+                onPendingChanged = { pending -> pendingStates += pending }
             ) {
                 events += "first-start"
                 firstStarted.complete(Unit)
@@ -34,7 +34,7 @@ class CommandExecutionGateTest {
 
         val second = launch {
             gate.runExclusive(
-                onPendingChanged = pendingStates::add
+                onPendingChanged = { pending -> pendingStates += pending }
             ) {
                 events += "second"
             }
