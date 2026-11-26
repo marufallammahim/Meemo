@@ -31,6 +31,7 @@ import javax.inject.Inject
 @Immutable
 data class AssistantHomeUiState(
     val executionState: AssistantExecutionState = AssistantExecutionState.IDLE,
+    val isCommandInProgress: Boolean = false,
     val inputDraft: String = "",
     val livePartialTranscript: String = "",
     val isTtsSpeaking: Boolean = false,
@@ -66,6 +67,7 @@ class AssistantViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val localState = MutableStateFlow(AssistantHomeUiState())
+    private val commandExecutionGate = CommandExecutionGate()
 
     val uiState: StateFlow<AssistantHomeUiState> = combine(
         localState,
@@ -136,7 +138,7 @@ class AssistantViewModel @Inject constructor(
         rawCommand: String,
         source: CommandInputSource = CommandInputSource.TEXT
     ) {
-        viewModelScope.launch {
+        launchCommand {
             localState.update {
                 it.copy(
                     activeError = null,
@@ -156,7 +158,7 @@ class AssistantViewModel @Inject constructor(
     }
 
     fun onSelectAmbiguousCandidate(app: InstalledAppInfo) {
-        viewModelScope.launch {
+        launchCommand {
             localState.update { it.copy(ambiguousCandidates = emptyList(), ambiguousQuery = "") }
             val outcome = processCommandUseCase.confirmAction(
                 action = MeemoAction.OpenApplication(app.packageName, app.appLabel),
@@ -169,7 +171,7 @@ class AssistantViewModel @Inject constructor(
     }
 
     fun onConfirmPendingAction(action: MeemoAction) {
-        viewModelScope.launch {
+        launchCommand {
             localState.update { it.copy(pendingConfirmationAction = null, pendingConfirmationPrompt = "") }
             val outcome = processCommandUseCase.confirmAction(
                 action = action,
@@ -223,6 +225,17 @@ class AssistantViewModel @Inject constructor(
             com.marufallammahim.meemo.core.error.RecoveryActionType.OPEN_SYSTEM_SETTINGS ->
                 settingsCoordinator.openAppDetailsSettings()
             else -> dismissError()
+        }
+    }
+
+    private fun launchCommand(block: suspend () -> Unit) {
+        viewModelScope.launch {
+            commandExecutionGate.runExclusive(
+                onPendingChanged = { isPending ->
+                    localState.update { it.copy(isCommandInProgress = isPending) }
+                },
+                block = block
+            )
         }
     }
 
