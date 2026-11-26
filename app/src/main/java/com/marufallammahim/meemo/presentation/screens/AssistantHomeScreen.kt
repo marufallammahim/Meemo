@@ -94,6 +94,7 @@ fun AssistantHomeScreen(
         // 2. Quick Command Suggestion Chips
         QuickSuggestionChipsRow(
             suggestions = state.quickSuggestions,
+            enabled = !state.isCommandInProgress,
             onSuggestionClick = { phrase -> viewModel.submitCommand(phrase) }
         )
 
@@ -191,7 +192,7 @@ fun AssistantHomeScreen(
                 trailingIcon = {
                     IconButton(
                         onClick = { viewModel.submitDraftCommand() },
-                        enabled = state.inputDraft.isNotBlank()
+                        enabled = state.inputDraft.isNotBlank() && !state.isCommandInProgress
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
