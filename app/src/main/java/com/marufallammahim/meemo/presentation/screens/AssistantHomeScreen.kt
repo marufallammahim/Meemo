@@ -71,7 +71,7 @@ fun AssistantHomeScreen(
                         style = MaterialTheme.typography.headlineMedium
                     )
                     StatusPillBadge(
-                        label = state.executionState.name,
+                        label = if (state.isVoiceStopping) "STOPPING" else state.executionState.name,
                         isError = state.executionState == AssistantExecutionState.FAILED
                     )
                 }
