@@ -87,8 +87,9 @@ class SpeechRecognizerController @Inject constructor(
     }
 
     fun stopListening() {
-        // stopListening() intentionally keeps this session valid so its final result
-        // can still be delivered. Partial results are ignored after the user stops.
+        // Keep the session valid so a final transcript can still be delivered, but
+        // suppress terminal errors that are a normal consequence of an explicit stop.
+        sessionGuard.requestStopForCurrentSession()
         isSessionActive.set(false)
         runCatching { speechRecognizer?.stopListening() }
         _state.value = VoiceRecognitionState.Idle
@@ -137,16 +138,25 @@ class SpeechRecognizerController @Inject constructor(
 
         override fun onError(error: Int) {
             if (!finishSession(sessionId, recognizer)) return
+            if (sessionGuard.consumeStopRequest(sessionId)) {
+                _state.value = VoiceRecognitionState.Idle
+                return
+            }
             val reason = mapRecognizerErrorCode(error)
             _state.value = VoiceRecognitionState.Error(MeemoError.SpeechUnavailable(reason))
         }
 
         override fun onResults(results: Bundle?) {
             if (!finishSession(sessionId, recognizer)) return
+            val userStopped = sessionGuard.consumeStopRequest(sessionId)
             val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
             val best = matches?.firstOrNull()?.trim().orEmpty()
             if (best.isBlank()) {
-                _state.value = VoiceRecognitionState.Error(MeemoError.EmptyCommand)
+                _state.value = if (userStopped) {
+                    VoiceRecognitionState.Idle
+                } else {
+                    VoiceRecognitionState.Error(MeemoError.EmptyCommand)
+                }
             } else {
                 _state.value = VoiceRecognitionState.FinalTranscript(best)
             }
@@ -178,6 +188,12 @@ class SpeechRecognizerController @Inject constructor(
             SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Speech recognizer busy"
             SpeechRecognizer.ERROR_SERVER -> "Recognition server error"
             SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech input detected"
+            SpeechRecognizer.ERROR_TOO_MANY_REQUESTS -> "Too many recognition requests; wait and try again"
+            SpeechRecognizer.ERROR_SERVER_DISCONNECTED -> "Speech recognition service disconnected"
+            SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED -> "Selected recognition language is not supported"
+            SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> "Selected recognition language is not installed"
+            SpeechRecognizer.ERROR_CANNOT_CHECK_SUPPORT -> "Recognition language support could not be checked"
+            SpeechRecognizer.ERROR_CANNOT_LISTEN_TO_DOWNLOAD_EVENTS -> "Recognition language download status is unavailable"
             else -> "Speech error ($errorCode)"
         }
     }
