@@ -20,6 +20,8 @@ internal class RecognitionSessionGuard {
 
     fun isCurrentSession(sessionId: Long): Boolean = activeSession.get() == sessionId
 
+    fun isStopRequested(sessionId: Long): Boolean = stopRequestedSession.get() == sessionId
+
     fun requestStopForCurrentSession(): Boolean {
         val sessionId = activeSession.get()
         if (sessionId == NO_SESSION) return false
