@@ -1,14 +1,23 @@
 package com.marufallammahim.meemo.presentation.screens
 
-import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.atomic.AtomicInteger
 
-/** Prevents two assistant actions from running concurrently in the same screen. */
+/** Serializes assistant actions while retaining commands submitted during an active turn. */
 internal class CommandExecutionGate {
-    private val isActive = AtomicBoolean(false)
+    private val mutex = Mutex()
+    private val pendingCommands = AtomicInteger(0)
 
-    fun tryEnter(): Boolean = isActive.compareAndSet(false, true)
-
-    fun leave() {
-        isActive.set(false)
+    suspend fun runExclusive(
+        onPendingChanged: (Boolean) -> Unit,
+        block: suspend () -> Unit
+    ) {
+        onPendingChanged(pendingCommands.incrementAndGet() > 0)
+        try {
+            mutex.withLock { block() }
+        } finally {
+            onPendingChanged(pendingCommands.decrementAndGet() > 0)
+        }
     }
 }
