@@ -72,7 +72,8 @@ fun StatusPillBadge(
 fun QuickSuggestionChipsRow(
     suggestions: List<String>,
     onSuggestionClick: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     LazyRow(
         modifier = modifier.fillMaxWidth(),
@@ -82,6 +83,7 @@ fun QuickSuggestionChipsRow(
         items(suggestions) { phrase ->
             AssistChip(
                 onClick = { onSuggestionClick(phrase) },
+                enabled = enabled,
                 label = {
                     Text(
                         text = phrase,
