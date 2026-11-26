@@ -33,6 +33,13 @@ class RecognitionSessionGuardTest {
     }
 
     @Test
+    fun `does not request a stop when no recognizer session is active`() {
+        val guard = RecognitionSessionGuard()
+
+        assertFalse(guard.requestStopForCurrentSession())
+    }
+
+    @Test
     fun `records an explicit stop only for the current session`() {
         val guard = RecognitionSessionGuard()
         val sessionId = guard.beginSession()
