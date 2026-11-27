@@ -23,16 +23,27 @@ class NotificationReadAloud @Inject constructor(
 ) {
     private val transientQueue = ArrayDeque<TransientNotificationItem>()
 
-    @Synchronized
     fun enqueueTransient(item: TransientNotificationItem) {
         val nowMillis = timeProvider.nowMillis()
-        pruneExpiredItems(nowMillis)
-        if (!isRecent(item.receivedAtMs, nowMillis)) return
+        val shouldStopSpeech = synchronized(this) {
+            val sizeBeforePruning = transientQueue.size
+            pruneExpiredItems(nowMillis)
+            var invalidatedSpeech = transientQueue.size != sizeBeforePruning
+            if (!isRecent(item.receivedAtMs, nowMillis)) {
+                return@synchronized invalidatedSpeech
+            }
 
-        while (transientQueue.size >= MAX_TRANSIENT_ITEMS) {
-            transientQueue.pollFirst()
+            if (transientQueue.size >= MAX_TRANSIENT_ITEMS) {
+                transientQueue.pollFirst()
+                invalidatedSpeech = true
+            }
+            transientQueue.addLast(item)
+            invalidatedSpeech
         }
-        transientQueue.addLast(item)
+
+        // The platform queue cannot remove individual notification utterances.
+        // Stop stale speech when expiry or capacity eviction invalidates its snapshot.
+        if (shouldStopSpeech) ttsController.stopSpeaking()
     }
 
     @Synchronized
