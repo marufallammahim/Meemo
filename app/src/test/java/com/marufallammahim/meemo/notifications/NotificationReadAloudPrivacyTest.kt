@@ -136,6 +136,42 @@ class NotificationReadAloudPrivacyTest {
         assertFalse(result.summaryEn.contains("WhatsApp"))
     }
 
+    @Test
+    fun `expired queued previews cancel speech before a new notification is added`() = runTest {
+        val preferences = enabledPreferences()
+        val ttsController = mockk<TtsController>(relaxed = true)
+        val readAloud = createReadAloud(preferences, ttsController)
+        readAloud.handleIncomingNotification(sampleNotification())
+
+        currentMillis += NotificationReadAloud.MAX_TRANSIENT_AGE_MS + 1L
+        readAloud.handleIncomingNotification(
+            sampleNotification(senderOrTitle = "Bob", messageBody = "New message")
+        )
+
+        verify(exactly = 1) { ttsController.stopSpeaking() }
+    }
+
+    @Test
+    fun `queue capacity eviction cancels speech for discarded notification previews`() = runTest {
+        val preferences = enabledPreferences()
+        val ttsController = mockk<TtsController>(relaxed = true)
+        val readAloud = createReadAloud(preferences, ttsController)
+
+        repeat(NotificationReadAloud.MAX_TRANSIENT_ITEMS + 1) { index ->
+            readAloud.handleIncomingNotification(
+                sampleNotification(
+                    senderOrTitle = "Sender $index",
+                    messageBody = "Message $index"
+                )
+            )
+        }
+
+        verify(exactly = 1) { ttsController.stopSpeaking() }
+        val result = readAloud.readQueuedNotificationsSummary() as ActionResult.Success
+        assertTrue(result.summaryEn.contains("Latest of 15 notification(s)"))
+        assertTrue(result.summaryEn.contains("Sender 15"))
+    }
+
     private fun createReadAloud(
         preferences: MutableStateFlow<UserPreferences>,
         ttsController: TtsController = mockk(relaxed = true)
