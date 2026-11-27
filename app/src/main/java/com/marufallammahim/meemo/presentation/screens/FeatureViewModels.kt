@@ -273,8 +273,10 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setTtsEnabled(enabled: Boolean) {
-        if (!enabled) ttsController.stopSpeaking()
-        viewModelScope.launch { repository.setTtsEnabled(enabled) }
+        viewModelScope.launch {
+            repository.setTtsEnabled(enabled)
+            if (!enabled) ttsController.stopSpeaking()
+        }
     }
 
     fun setTtsRate(rate: Float) {
@@ -290,13 +292,17 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setNotificationReadAloud(enabled: Boolean) {
-        if (!enabled) ttsController.stopSpeaking()
-        viewModelScope.launch { repository.setNotificationReadAloud(enabled) }
+        viewModelScope.launch {
+            repository.setNotificationReadAloud(enabled)
+            if (!enabled) ttsController.stopSpeaking()
+        }
     }
 
     fun setNotificationSenderOnly(senderOnly: Boolean) {
-        if (senderOnly) ttsController.stopSpeaking()
-        viewModelScope.launch { repository.setNotificationAnnounceSenderOnly(senderOnly) }
+        viewModelScope.launch {
+            repository.setNotificationAnnounceSenderOnly(senderOnly)
+            if (senderOnly) ttsController.stopSpeaking()
+        }
     }
 
     fun setQuietHours(enabled: Boolean, startHour: Int, endHour: Int) {
