@@ -18,6 +18,7 @@ import com.marufallammahim.meemo.tts.TtsController
 import com.marufallammahim.meemo.tts.TtsEngineState
 import com.marufallammahim.meemo.voice.VoiceController
 import com.marufallammahim.meemo.voice.VoiceRecognitionState
+import com.marufallammahim.meemo.voice.isSessionActive
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
