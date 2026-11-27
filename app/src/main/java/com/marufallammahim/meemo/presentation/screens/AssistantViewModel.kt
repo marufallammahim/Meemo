@@ -32,6 +32,7 @@ import javax.inject.Inject
 data class AssistantHomeUiState(
     val executionState: AssistantExecutionState = AssistantExecutionState.IDLE,
     val isCommandInProgress: Boolean = false,
+    val isVoiceSessionActive: Boolean = false,
     val isVoiceStopping: Boolean = false,
     val inputDraft: String = "",
     val livePartialTranscript: String = "",
@@ -82,6 +83,7 @@ class AssistantViewModel @Inject constructor(
             recentMessages = messages,
             isTtsSpeaking = ttsState == TtsEngineState.SPEAKING,
             livePartialTranscript = (voiceState as? VoiceRecognitionState.PartialTranscript)?.text.orEmpty(),
+            isVoiceSessionActive = voiceState.isSessionActive,
             isVoiceStopping = voiceState is VoiceRecognitionState.Stopping
         )
     }.stateIn(
