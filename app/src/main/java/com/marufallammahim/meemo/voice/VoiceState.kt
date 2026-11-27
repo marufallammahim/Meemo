@@ -10,3 +10,14 @@ sealed interface VoiceRecognitionState {
     data class FinalTranscript(val text: String) : VoiceRecognitionState
     data class Error(val error: MeemoError) : VoiceRecognitionState
 }
+
+/**
+ * Whether this state still owns an active platform recognition session.
+ *
+ * A partial transcript and a pending stop both belong to the current session:
+ * the UI must keep exposing Stop instead of requesting microphone permission again.
+ */
+val VoiceRecognitionState.isSessionActive: Boolean
+    get() = this is VoiceRecognitionState.Listening ||
+        this is VoiceRecognitionState.PartialTranscript ||
+        this is VoiceRecognitionState.Stopping
