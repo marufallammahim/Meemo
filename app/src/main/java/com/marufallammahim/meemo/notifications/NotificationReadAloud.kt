@@ -44,6 +44,9 @@ class NotificationReadAloud @Inject constructor(
         val prefs = repository.userPreferencesFlow.first()
         if (!prefs.notificationReadAloudEnabled) {
             clearTransientQueue()
+            // The platform TTS queue is shared with assistant responses. Stop it so a
+            // notification preview queued before this preference change cannot leak.
+            ttsController.stopSpeaking()
             return
         }
 
@@ -78,16 +81,28 @@ class NotificationReadAloud @Inject constructor(
 
     suspend fun readQueuedNotificationsSummary(): ActionResult {
         val prefs = repository.userPreferencesFlow.first()
+        var shouldStopSpeech = false
         val snapshot = synchronized(this) {
+            val sizeBeforePruning = transientQueue.size
             pruneExpiredItems(timeProvider.nowMillis())
+            if (transientQueue.size != sizeBeforePruning) shouldStopSpeech = true
+
             if (!prefs.notificationReadAloudEnabled) {
                 transientQueue.clear()
+                shouldStopSpeech = true
                 emptyList()
             } else {
                 // Revalidate queued entries against current privacy settings, not only the
                 // settings that were active when each notification arrived.
+                val sizeBeforeAllowlist = transientQueue.size
                 transientQueue.removeIf { it.packageName !in prefs.allowedNotificationPackages }
+                if (transientQueue.size != sizeBeforeAllowlist) shouldStopSpeech = true
+
                 if (prefs.notificationAnnounceSenderOnly) {
+                    val containsPreview = transientQueue.any {
+                        it.senderOrTitle.isNotBlank() || it.messageBody.isNotBlank()
+                    }
+                    if (containsPreview) shouldStopSpeech = true
                     val redactedItems = transientQueue.map {
                         it.copy(senderOrTitle = "", messageBody = "")
                     }
@@ -97,6 +112,9 @@ class NotificationReadAloud @Inject constructor(
                 transientQueue.toList()
             }
         }
+
+        // Cancel already-enqueued previews whenever current privacy policy invalidates them.
+        if (shouldStopSpeech) ttsController.stopSpeaking()
 
         if (snapshot.isEmpty()) {
             return ActionResult.Success(
