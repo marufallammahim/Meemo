@@ -108,7 +108,10 @@ class AssistantViewModel @Inject constructor(
                     }
                     VoiceRecognitionState.Stopping -> {
                         localState.update {
-                            it.copy(executionState = AssistantExecutionState.LISTENING, activeError = null)
+                            it.copy(
+                                executionState = AssistantExecutionState.LISTENING,
+                                activeError = null
+                            )
                         }
                     }
                     is VoiceRecognitionState.FinalTranscript -> {
