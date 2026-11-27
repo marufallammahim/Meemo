@@ -26,6 +26,7 @@ import com.marufallammahim.meemo.root.RootCommandSpec
 import com.marufallammahim.meemo.root.RootManager
 import com.marufallammahim.meemo.root.RootStatus
 import com.marufallammahim.meemo.settings.SettingsCoordinator
+import com.marufallammahim.meemo.tts.TtsController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -256,6 +257,7 @@ class CapabilitiesViewModel @Inject constructor(
 class SettingsViewModel @Inject constructor(
     private val repository: MeemoRepository,
     private val credentialStore: EncryptedCredentialStore,
+    private val ttsController: TtsController,
     val settingsCoordinator: SettingsCoordinator
 ) : ViewModel() {
 
@@ -271,6 +273,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setTtsEnabled(enabled: Boolean) {
+        if (!enabled) ttsController.stopSpeaking()
         viewModelScope.launch { repository.setTtsEnabled(enabled) }
     }
 
@@ -287,10 +290,12 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setNotificationReadAloud(enabled: Boolean) {
+        if (!enabled) ttsController.stopSpeaking()
         viewModelScope.launch { repository.setNotificationReadAloud(enabled) }
     }
 
     fun setNotificationSenderOnly(senderOnly: Boolean) {
+        if (senderOnly) ttsController.stopSpeaking()
         viewModelScope.launch { repository.setNotificationAnnounceSenderOnly(senderOnly) }
     }
 
