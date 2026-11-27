@@ -76,18 +76,32 @@ class NotificationReadAloudPrivacyTest {
     }
 
     @Test
-    fun `disabling notification read aloud clears the transient queue`() = runTest {
+    fun `disabling notification read aloud clears the queue and stops pending speech`() = runTest {
         val preferences = enabledPreferences()
-        val readAloud = createReadAloud(preferences)
+        val ttsController = mockk<TtsController>(relaxed = true)
+        val readAloud = createReadAloud(preferences, ttsController)
         readAloud.handleIncomingNotification(sampleNotification())
 
         preferences.value = preferences.value.copy(notificationReadAloudEnabled = false)
         val disabledResult = readAloud.readQueuedNotificationsSummary() as ActionResult.Success
+        verify(exactly = 1) { ttsController.stopSpeaking() }
         assertTrue(disabledResult.summaryEn.contains("No recent unread notifications"))
 
         preferences.value = preferences.value.copy(notificationReadAloudEnabled = true)
         val reenabledResult = readAloud.readQueuedNotificationsSummary() as ActionResult.Success
         assertTrue(reenabledResult.summaryEn.contains("No recent unread notifications"))
+    }
+
+    @Test
+    fun `disabled read aloud stops speech when a notification callback arrives`() = runTest {
+        val preferences = enabledPreferences()
+        preferences.value = preferences.value.copy(notificationReadAloudEnabled = false)
+        val ttsController = mockk<TtsController>(relaxed = true)
+        val readAloud = createReadAloud(preferences, ttsController)
+
+        readAloud.handleIncomingNotification(sampleNotification())
+
+        verify(exactly = 1) { ttsController.stopSpeaking() }
     }
 
     @Test
