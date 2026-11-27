@@ -157,7 +157,7 @@ class NotificationReadAloudPrivacyTest {
         val ttsController = mockk<TtsController>(relaxed = true)
         val readAloud = createReadAloud(preferences, ttsController)
 
-        repeat(NotificationReadAloud.MAX_TRANSIENT_ITEMS + 1) { index ->
+        repeat(16) { index ->
             readAloud.handleIncomingNotification(
                 sampleNotification(
                     senderOrTitle = "Sender $index",
