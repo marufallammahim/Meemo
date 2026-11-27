@@ -18,6 +18,7 @@ import com.marufallammahim.meemo.tts.TtsController
 import com.marufallammahim.meemo.tts.TtsEngineState
 import com.marufallammahim.meemo.voice.VoiceController
 import com.marufallammahim.meemo.voice.VoiceRecognitionState
+import com.marufallammahim.meemo.voice.isSessionActive
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -32,6 +33,8 @@ import javax.inject.Inject
 data class AssistantHomeUiState(
     val executionState: AssistantExecutionState = AssistantExecutionState.IDLE,
     val isCommandInProgress: Boolean = false,
+    val isVoiceSessionActive: Boolean = false,
+    val isVoiceStopping: Boolean = false,
     val inputDraft: String = "",
     val livePartialTranscript: String = "",
     val isTtsSpeaking: Boolean = false,
@@ -80,7 +83,9 @@ class AssistantViewModel @Inject constructor(
             preferences = prefs,
             recentMessages = messages,
             isTtsSpeaking = ttsState == TtsEngineState.SPEAKING,
-            livePartialTranscript = (voiceState as? VoiceRecognitionState.PartialTranscript)?.text.orEmpty()
+            livePartialTranscript = (voiceState as? VoiceRecognitionState.PartialTranscript)?.text.orEmpty(),
+            isVoiceSessionActive = voiceState.isSessionActive,
+            isVoiceStopping = voiceState is VoiceRecognitionState.Stopping
         )
     }.stateIn(
         scope = viewModelScope,
@@ -100,6 +105,14 @@ class AssistantViewModel @Inject constructor(
                     }
                     is VoiceRecognitionState.PartialTranscript -> {
                         localState.update { it.copy(executionState = AssistantExecutionState.TRANSCRIBING) }
+                    }
+                    VoiceRecognitionState.Stopping -> {
+                        localState.update {
+                            it.copy(
+                                executionState = AssistantExecutionState.LISTENING,
+                                activeError = null
+                            )
+                        }
                     }
                     is VoiceRecognitionState.FinalTranscript -> {
                         submitCommand(vState.text, CommandInputSource.VOICE_MANUAL)
@@ -197,13 +210,15 @@ class AssistantViewModel @Inject constructor(
     }
 
     fun toggleVoiceListening() {
-        val current = localState.value.executionState
-        if (current == AssistantExecutionState.LISTENING) {
-            voiceController.stopVoiceCapture()
-        } else {
-            ttsController.stopSpeaking()
-            val localeTag = uiState.value.preferences.languageMode.bcp47Tag
-            voiceController.startVoiceCapture(localeTag)
+        when (voiceController.recognitionState.value) {
+            is VoiceRecognitionState.Listening,
+            is VoiceRecognitionState.PartialTranscript -> voiceController.stopVoiceCapture()
+            VoiceRecognitionState.Stopping -> Unit
+            else -> {
+                ttsController.stopSpeaking()
+                val localeTag = uiState.value.preferences.languageMode.bcp47Tag
+                voiceController.startVoiceCapture(localeTag)
+            }
         }
     }
 

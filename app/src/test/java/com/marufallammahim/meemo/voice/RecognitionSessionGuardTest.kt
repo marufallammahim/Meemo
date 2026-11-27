@@ -45,7 +45,10 @@ class RecognitionSessionGuardTest {
         val sessionId = guard.beginSession()
 
         assertTrue(guard.requestStopForCurrentSession())
+        assertTrue(guard.isCurrentSession(sessionId))
+        assertTrue(guard.isStopRequested(sessionId))
         assertTrue(guard.consumeStopRequest(sessionId))
+        assertFalse(guard.isStopRequested(sessionId))
         assertFalse(guard.consumeStopRequest(sessionId))
     }
 

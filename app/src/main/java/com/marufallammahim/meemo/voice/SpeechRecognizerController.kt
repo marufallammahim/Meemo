@@ -87,12 +87,34 @@ class SpeechRecognizerController @Inject constructor(
     }
 
     fun stopListening() {
-        // Keep the session valid so a final transcript can still be delivered, but
-        // suppress terminal errors that are a normal consequence of an explicit stop.
-        sessionGuard.requestStopForCurrentSession()
-        isSessionActive.set(false)
-        runCatching { speechRecognizer?.stopListening() }
-        _state.value = VoiceRecognitionState.Idle
+        if (!sessionGuard.requestStopForCurrentSession()) {
+            isSessionActive.set(false)
+            _state.value = VoiceRecognitionState.Idle
+            return
+        }
+
+        val recognizer = speechRecognizer
+        if (recognizer == null) {
+            sessionGuard.invalidateCurrentSession()
+            isSessionActive.set(false)
+            _state.value = VoiceRecognitionState.Idle
+            return
+        }
+
+        // Keep the session active until Android delivers its terminal callback.
+        // A quick restart must not destroy a final transcript that is still pending.
+        _state.value = VoiceRecognitionState.Stopping
+        try {
+            recognizer.stopListening()
+        } catch (e: Exception) {
+            sessionGuard.invalidateCurrentSession()
+            isSessionActive.set(false)
+            releaseRecognizer()
+            safeLogger.error("SpeechController", "Failed to stop SpeechRecognizer", e)
+            _state.value = VoiceRecognitionState.Error(
+                MeemoError.SpeechUnavailable(e.javaClass.simpleName)
+            )
+        }
     }
 
     fun cancelAndRelease() {
@@ -163,7 +185,10 @@ class SpeechRecognizerController @Inject constructor(
         }
 
         override fun onPartialResults(partialResults: Bundle?) {
-            if (!sessionGuard.isCurrentSession(sessionId) || !isSessionActive.get()) return
+            if (!sessionGuard.isCurrentSession(sessionId) ||
+                sessionGuard.isStopRequested(sessionId) ||
+                !isSessionActive.get()
+            ) return
             val partial = partialResults
                 ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 ?.firstOrNull()

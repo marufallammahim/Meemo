@@ -71,7 +71,7 @@ fun AssistantHomeScreen(
                         style = MaterialTheme.typography.headlineMedium
                     )
                     StatusPillBadge(
-                        label = state.executionState.name,
+                        label = if (state.isVoiceStopping) "STOPPING" else state.executionState.name,
                         isError = state.executionState == AssistantExecutionState.FAILED
                     )
                 }
@@ -204,7 +204,7 @@ fun AssistantHomeScreen(
             Spacer(modifier = Modifier.width(MeemoDimens.SpaceXS))
             FloatingActionButton(
                 onClick = {
-                    if (state.executionState == AssistantExecutionState.LISTENING) {
+                    if (state.isVoiceSessionActive) {
                         viewModel.toggleVoiceListening()
                     } else {
                         onRequestMicPermission { granted ->
@@ -212,19 +212,19 @@ fun AssistantHomeScreen(
                         }
                     }
                 },
-                containerColor = if (state.executionState == AssistantExecutionState.LISTENING) {
+                containerColor = if (state.isVoiceSessionActive) {
                     MaterialTheme.colorScheme.error
                 } else {
                     MaterialTheme.colorScheme.primary
                 }
             ) {
                 Icon(
-                    imageVector = if (state.executionState == AssistantExecutionState.LISTENING) {
+                    imageVector = if (state.isVoiceSessionActive) {
                         Icons.Default.Stop
                     } else {
                         Icons.Default.Mic
                     },
-                    contentDescription = if (state.executionState == AssistantExecutionState.LISTENING) {
+                    contentDescription = if (state.isVoiceSessionActive) {
                         stringResource(R.string.action_stop_listening)
                     } else {
                         stringResource(R.string.action_start_listening)
