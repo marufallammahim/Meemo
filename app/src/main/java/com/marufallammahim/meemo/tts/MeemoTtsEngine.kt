@@ -170,7 +170,7 @@ class MeemoTtsEngine @Inject constructor(
         )
         val action = speechQueue.enqueue(request, replacePending, System.currentTimeMillis())
         executeActionLocked(engine, action)
-        return true
+        return speechQueue.isActive(request.id) || speechQueue.containsPending(request.id)
     }
 
     private fun executeActionLocked(engine: TextToSpeech, action: TtsSpeechQueueAction) {
