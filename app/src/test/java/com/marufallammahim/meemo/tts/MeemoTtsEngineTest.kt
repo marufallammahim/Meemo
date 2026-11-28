@@ -2,6 +2,7 @@ package com.marufallammahim.meemo.tts
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -30,36 +31,117 @@ class MeemoTtsEngineTest {
     }
 
     @Test
-    fun `keeps speaking state pending until every queued utterance completes`() {
-        val queue = PendingUtteranceQueue()
-        queue.enqueue("first", flushQueue = true)
-        queue.enqueue("second", flushQueue = false)
+    fun `assistant flush replaces the active utterance and queued requests`() {
+        val queue = TtsSpeechQueue()
+        val first = queue.enqueue(request("first", TtsSpeechSource.ASSISTANT), false, 0L)
+        queue.enqueue(request("notification", TtsSpeechSource.NOTIFICATION), false, 0L)
 
-        assertFalse(queue.complete("first"))
-        assertTrue(queue.contains("second"))
-        assertTrue(queue.complete("second"))
+        val replacement = queue.enqueue(
+            request("replacement", TtsSpeechSource.ASSISTANT),
+            replacePending = true,
+            nowMillis = 0L
+        )
+
+        assertTrue(replacement.stopActive)
+        assertEquals("replacement", replacement.next?.id)
+        assertFalse(queue.isActive("first"))
+        assertFalse(queue.containsPending("notification"))
+        assertEquals("replacement", queue.activeRequest()?.id)
+        assertNull(queue.complete("first", 0L).next)
+        assertEquals("replacement", queue.activeRequest()?.id)
+        assertEquals("first", first.next?.id)
     }
 
     @Test
-    fun `queue flush replaces prior utterance tracking and ignores stale callbacks`() {
-        val queue = PendingUtteranceQueue()
-        queue.enqueue("old", flushQueue = true)
-        queue.enqueue("replacement", flushQueue = true)
+    fun `notification privacy cancellation leaves an assistant response untouched`() {
+        val queue = TtsSpeechQueue()
+        queue.enqueue(request("assistant", TtsSpeechSource.ASSISTANT), false, 0L)
+        queue.enqueue(request("notification-one", TtsSpeechSource.NOTIFICATION), false, 0L)
+        queue.enqueue(request("notification-two", TtsSpeechSource.NOTIFICATION), false, 0L)
 
-        assertFalse(queue.contains("old"))
-        assertFalse(queue.complete("old"))
-        assertTrue(queue.complete("replacement"))
+        val cancellation = queue.stopNotifications(0L)
+
+        assertFalse(cancellation.stopActive)
+        assertNull(cancellation.next)
+        assertEquals("assistant", queue.activeRequest()?.id)
+        assertEquals(0, queue.pendingCount())
     }
 
     @Test
-    fun `stop clears all pending utterances`() {
-        val queue = PendingUtteranceQueue()
-        queue.enqueue("first", flushQueue = true)
-        queue.enqueue("second", flushQueue = false)
+    fun `cancelling an active notification advances to the next retained request`() {
+        val queue = TtsSpeechQueue()
+        queue.enqueue(request("notification", TtsSpeechSource.NOTIFICATION), false, 0L)
+        queue.enqueue(request("assistant", TtsSpeechSource.ASSISTANT), false, 0L)
 
-        queue.clear()
+        val cancellation = queue.stopNotifications(0L)
 
-        assertTrue(queue.isEmpty())
-        assertTrue(queue.complete("first"))
+        assertTrue(cancellation.stopActive)
+        assertEquals("assistant", cancellation.next?.id)
+        assertEquals("assistant", queue.activeRequest()?.id)
     }
+
+    @Test
+    fun `notification capacity evicts the oldest preview without stopping assistant speech`() {
+        val queue = TtsSpeechQueue(maxNotificationRequests = 2)
+        queue.enqueue(request("assistant", TtsSpeechSource.ASSISTANT), false, 0L)
+        queue.enqueue(request("oldest", TtsSpeechSource.NOTIFICATION), false, 0L)
+        queue.enqueue(request("middle", TtsSpeechSource.NOTIFICATION), false, 0L)
+
+        val newest = queue.enqueue(request("newest", TtsSpeechSource.NOTIFICATION), false, 0L)
+
+        assertFalse(newest.stopActive)
+        assertNull(newest.next)
+        assertEquals("assistant", queue.activeRequest()?.id)
+        assertFalse(queue.containsPending("oldest"))
+        assertTrue(queue.containsPending("middle"))
+        assertTrue(queue.containsPending("newest"))
+        assertEquals(2, queue.pendingCount())
+    }
+
+    @Test
+    fun `expired notification requests are skipped when the active utterance completes`() {
+        val queue = TtsSpeechQueue()
+        queue.enqueue(request("assistant", TtsSpeechSource.ASSISTANT), false, 0L)
+        queue.enqueue(
+            request("expired", TtsSpeechSource.NOTIFICATION, expiresAtMillis = 10L),
+            false,
+            0L
+        )
+        queue.enqueue(
+            request("fresh", TtsSpeechSource.NOTIFICATION, expiresAtMillis = 100L),
+            false,
+            0L
+        )
+
+        val next = queue.complete("assistant", 10L)
+
+        assertEquals("fresh", next.next?.id)
+        assertEquals("fresh", queue.activeRequest()?.id)
+        assertFalse(queue.containsPending("expired"))
+    }
+
+    @Test
+    fun `stale completion callbacks cannot advance a replacement utterance`() {
+        val queue = TtsSpeechQueue()
+        queue.enqueue(request("old", TtsSpeechSource.NOTIFICATION), false, 0L)
+        queue.enqueue(request("new", TtsSpeechSource.ASSISTANT), true, 0L)
+
+        val staleCompletion = queue.complete("old", 0L)
+
+        assertNull(staleCompletion.next)
+        assertEquals("new", queue.activeRequest()?.id)
+    }
+
+    private fun request(
+        id: String,
+        source: TtsSpeechSource,
+        expiresAtMillis: Long? = null
+    ) = TtsSpeechRequest(
+        id = id,
+        text = "speech",
+        languageTag = "en-US",
+        speechRate = 1.0f,
+        source = source,
+        expiresAtMillis = expiresAtMillis
+    )
 }
