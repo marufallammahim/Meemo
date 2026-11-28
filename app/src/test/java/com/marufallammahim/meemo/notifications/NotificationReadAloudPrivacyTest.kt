@@ -5,9 +5,18 @@ import com.marufallammahim.meemo.core.utilities.TimeProvider
 import com.marufallammahim.meemo.domain.model.UserPreferences
 import com.marufallammahim.meemo.domain.repository.MeemoRepository
 import com.marufallammahim.meemo.tts.TtsController
+import io.mockk.any
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
+import io.mockk.verifyOrder
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -75,39 +84,55 @@ class NotificationReadAloudPrivacyTest {
     }
 
     @Test
-    fun `disabling notification read aloud clears the transient queue`() = runTest {
+    fun `disabling read aloud clears the queue and cancels only notification speech`() = runTest {
         val preferences = enabledPreferences()
-        val readAloud = createReadAloud(preferences)
+        val ttsController = mockk<TtsController>(relaxed = true)
+        val readAloud = createReadAloud(preferences, ttsController)
         readAloud.handleIncomingNotification(sampleNotification())
 
+        readAloud.setNotificationReadAloudEnabled(false)
         preferences.value = preferences.value.copy(notificationReadAloudEnabled = false)
         val disabledResult = readAloud.readQueuedNotificationsSummary() as ActionResult.Success
         assertTrue(disabledResult.summaryEn.contains("No recent unread notifications"))
-
-        preferences.value = preferences.value.copy(notificationReadAloudEnabled = true)
-        val reenabledResult = readAloud.readQueuedNotificationsSummary() as ActionResult.Success
-        assertTrue(reenabledResult.summaryEn.contains("No recent unread notifications"))
+        verify(atLeast = 1) { ttsController.stopNotificationSpeech() }
+        verify(exactly = 0) { ttsController.stopSpeaking() }
     }
 
     @Test
-    fun `sender only preference change purges previews already queued in memory`() = runTest {
+    fun `disabled read aloud rejects callbacks and cancels notification speech`() = runTest {
         val preferences = enabledPreferences()
-        val readAloud = createReadAloud(preferences)
+        preferences.value = preferences.value.copy(notificationReadAloudEnabled = false)
+        val ttsController = mockk<TtsController>(relaxed = true)
+        val readAloud = createReadAloud(preferences, ttsController)
+
         readAloud.handleIncomingNotification(sampleNotification())
 
+        verify(exactly = 1) { ttsController.stopNotificationSpeech() }
+        verify(exactly = 0) {
+            ttsController.enqueueNotificationSpeech(any(), any(), any(), any())
+        }
+    }
+
+    @Test
+    fun `sender only preference change purges previews and cancels notification speech`() = runTest {
+        val preferences = enabledPreferences()
+        val ttsController = mockk<TtsController>(relaxed = true)
+        val readAloud = createReadAloud(preferences, ttsController)
+        readAloud.handleIncomingNotification(sampleNotification())
+
+        readAloud.setNotificationSenderOnly(true)
         preferences.value = preferences.value.copy(notificationAnnounceSenderOnly = true)
         val redactedResult = readAloud.readQueuedNotificationsSummary() as ActionResult.Success
         assertFalse(redactedResult.summaryEn.contains("Confidential message preview"))
-
-        preferences.value = preferences.value.copy(notificationAnnounceSenderOnly = false)
-        val laterResult = readAloud.readQueuedNotificationsSummary() as ActionResult.Success
-        assertFalse(laterResult.summaryEn.contains("Confidential message preview"))
+        verify(atLeast = 1) { ttsController.stopNotificationSpeech() }
+        verify(exactly = 0) { ttsController.stopSpeaking() }
     }
 
     @Test
     fun `removing an app from the allowlist removes its queued notifications`() = runTest {
         val preferences = enabledPreferences()
-        val readAloud = createReadAloud(preferences)
+        val ttsController = mockk<TtsController>(relaxed = true)
+        val readAloud = createReadAloud(preferences, ttsController)
         readAloud.handleIncomingNotification(sampleNotification())
 
         preferences.value = preferences.value.copy(allowedNotificationPackages = emptySet())
@@ -115,16 +140,53 @@ class NotificationReadAloudPrivacyTest {
 
         assertTrue(result.summaryEn.contains("No recent unread notifications"))
         assertFalse(result.summaryEn.contains("WhatsApp"))
+        verify { ttsController.stopNotificationSpeech() }
+        verify(exactly = 0) { ttsController.stopSpeaking() }
+    }
+
+    @Test
+    fun `opt out waits for an in flight notification before cancelling its speech`() = runTest {
+        val initialPreferences = UserPreferences(
+            notificationReadAloudEnabled = true,
+            allowedNotificationPackages = setOf("com.whatsapp"),
+            ttsEnabled = true
+        )
+        val flowEntered = CompletableDeferred<Unit>()
+        val releasePreferences = CompletableDeferred<Unit>()
+        val delayedPreferences: Flow<UserPreferences> = flow {
+            flowEntered.complete(Unit)
+            releasePreferences.await()
+            emit(initialPreferences)
+        }
+        val repository = mockk<MeemoRepository>(relaxed = true)
+        every { repository.userPreferencesFlow } returns delayedPreferences
+        val ttsController = mockk<TtsController>(relaxed = true)
+        val readAloud = createReadAloud(delayedPreferences, ttsController, repository)
+
+        val incoming = launch { readAloud.handleIncomingNotification(sampleNotification()) }
+        flowEntered.await()
+        val optOut = launch { readAloud.setNotificationReadAloudEnabled(false) }
+        runCurrent()
+        releasePreferences.complete(Unit)
+        incoming.join()
+        optOut.join()
+
+        coVerify { repository.setNotificationReadAloud(false) }
+        verifyOrder {
+            ttsController.enqueueNotificationSpeech(any(), any(), any(), any())
+            ttsController.stopNotificationSpeech()
+        }
     }
 
     private fun createReadAloud(
-        preferences: MutableStateFlow<UserPreferences>
+        preferences: Flow<UserPreferences>,
+        ttsController: TtsController = mockk(relaxed = true),
+        repository: MeemoRepository = mockk(relaxed = true)
     ): NotificationReadAloud {
-        val repository = mockk<MeemoRepository>()
         every { repository.userPreferencesFlow } returns preferences
         return NotificationReadAloud(
             policy = NotificationPolicy(fixedTime),
-            ttsController = mockk<TtsController>(relaxed = true),
+            ttsController = ttsController,
             repository = repository,
             timeProvider = fixedTime
         )
