@@ -23,34 +23,6 @@ enum class TtsEngineState {
 internal fun TtsEngineState.acceptsSpeech(): Boolean =
     this == TtsEngineState.READY || this == TtsEngineState.SPEAKING
 
-internal class PendingUtteranceQueue {
-    private val pendingIds = mutableSetOf<String>()
-
-    @Synchronized
-    fun enqueue(utteranceId: String, flushQueue: Boolean) {
-        if (flushQueue) pendingIds.clear()
-        pendingIds.add(utteranceId)
-    }
-
-    @Synchronized
-    fun contains(utteranceId: String?): Boolean =
-        utteranceId != null && pendingIds.contains(utteranceId)
-
-    @Synchronized
-    fun complete(utteranceId: String?): Boolean {
-        if (utteranceId != null) pendingIds.remove(utteranceId)
-        return pendingIds.isEmpty()
-    }
-
-    @Synchronized
-    fun clear() {
-        pendingIds.clear()
-    }
-
-    @Synchronized
-    fun isEmpty(): Boolean = pendingIds.isEmpty()
-}
-
 @Singleton
 class MeemoTtsEngine @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -58,7 +30,7 @@ class MeemoTtsEngine @Inject constructor(
 ) : TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null
-    private val pendingUtterances = PendingUtteranceQueue()
+    private val speechQueue = TtsSpeechQueue()
     private val _state = MutableStateFlow(TtsEngineState.INITIALIZING)
     val state: StateFlow<TtsEngineState> = _state.asStateFlow()
 
@@ -72,38 +44,37 @@ class MeemoTtsEngine @Inject constructor(
 
     @Synchronized
     override fun onInit(status: Int) {
-        // TextToSpeech initialization is asynchronous. A callback can arrive after
-        // shutdown(), so never let a stale callback resurrect a released engine.
+        // A callback can arrive after shutdown(), so never resurrect a released engine.
         val engine = tts ?: return
         if (status == TextToSpeech.SUCCESS) {
             engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String?) {
-                    if (pendingUtterances.contains(utteranceId)) {
-                        _state.value = TtsEngineState.SPEAKING
+                    synchronized(this@MeemoTtsEngine) {
+                        if (speechQueue.isActive(utteranceId)) {
+                            _state.value = TtsEngineState.SPEAKING
+                        }
                     }
                 }
 
                 override fun onDone(utteranceId: String?) {
-                    updateStateAfterCompletion(utteranceId)
+                    completeUtterance(utteranceId)
                 }
 
                 @Deprecated("Deprecated in Java")
                 override fun onError(utteranceId: String?) {
-                    updateStateAfterCompletion(utteranceId)
+                    completeUtterance(utteranceId)
                 }
 
                 override fun onError(utteranceId: String?, errorCode: Int) {
                     safeLogger.warn("MeemoTtsEngine", "TTS utterance failed with error=$errorCode")
-                    updateStateAfterCompletion(utteranceId)
+                    completeUtterance(utteranceId)
                 }
 
                 override fun onStop(utteranceId: String?, interrupted: Boolean) {
-                    updateStateAfterCompletion(utteranceId)
+                    completeUtterance(utteranceId)
                 }
             })
-            if (pendingUtterances.isEmpty()) {
-                _state.value = TtsEngineState.READY
-            }
+            _state.value = TtsEngineState.READY
         } else {
             _state.value = TtsEngineState.UNAVAILABLE
             safeLogger.warn("MeemoTtsEngine", "TTS initialization failed with status=$status")
@@ -115,8 +86,7 @@ class MeemoTtsEngine @Inject constructor(
         if (!_state.value.acceptsSpeech()) return false
         val engine = tts ?: return false
         val locale = Locale.forLanguageTag(languageTag)
-        val res = engine.isLanguageAvailable(locale)
-        return res >= TextToSpeech.LANG_AVAILABLE
+        return engine.isLanguageAvailable(locale) >= TextToSpeech.LANG_AVAILABLE
     }
 
     @Synchronized
@@ -125,41 +95,52 @@ class MeemoTtsEngine @Inject constructor(
         languageTag: String = "en-US",
         speechRate: Float = 1.0f,
         flushQueue: Boolean = true
-    ): Boolean {
-        if (text.isBlank() || !_state.value.acceptsSpeech()) return false
-        val engine = tts ?: return false
+    ): Boolean = enqueueRequest(
+        text = text,
+        languageTag = languageTag,
+        speechRate = speechRate,
+        source = TtsSpeechSource.ASSISTANT,
+        expiresAtMillis = null,
+        replacePending = flushQueue
+    )
 
-        val locale = Locale.forLanguageTag(languageTag)
-        val availability = engine.isLanguageAvailable(locale)
-        if (availability < TextToSpeech.LANG_AVAILABLE) {
-            safeLogger.warn("MeemoTtsEngine", "Locale $languageTag unavailable in installed TTS engine")
-            return false
-        }
+    @Synchronized
+    fun enqueueNotificationSpeech(
+        text: String,
+        languageTag: String,
+        speechRate: Float,
+        expiresAtMillis: Long
+    ): Boolean = enqueueRequest(
+        text = text,
+        languageTag = languageTag,
+        speechRate = speechRate,
+        source = TtsSpeechSource.NOTIFICATION,
+        expiresAtMillis = expiresAtMillis,
+        replacePending = false
+    )
 
-        engine.language = locale
-        engine.setSpeechRate(normalizeSpeechRate(speechRate))
-        val queueMode = if (flushQueue) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
-        val utteranceId = UUID.randomUUID().toString()
-        pendingUtterances.enqueue(utteranceId, flushQueue)
-        val result = engine.speak(text, queueMode, null, utteranceId)
-        if (result != TextToSpeech.SUCCESS) {
-            updateStateAfterCompletion(utteranceId)
+    @Synchronized
+    fun stopNotificationSpeech() {
+        val engine = tts ?: return
+        val action = speechQueue.stopNotifications(System.currentTimeMillis())
+        executeActionLocked(engine, action)
+        if (speechQueue.activeRequest() == null && _state.value == TtsEngineState.SPEAKING) {
+            _state.value = TtsEngineState.READY
         }
-        return result == TextToSpeech.SUCCESS
     }
 
     @Synchronized
     fun stop() {
-        pendingUtterances.clear()
+        speechQueue.stopAll()
         runCatching { tts?.stop() }
-        if (_state.value == TtsEngineState.SPEAKING) {
+        if (tts != null && _state.value != TtsEngineState.UNAVAILABLE) {
             _state.value = TtsEngineState.READY
         }
     }
 
     @Synchronized
     fun shutdown() {
-        pendingUtterances.clear()
+        speechQueue.stopAll()
         val engine = tts
         tts = null
         runCatching {
@@ -169,9 +150,75 @@ class MeemoTtsEngine @Inject constructor(
         _state.value = TtsEngineState.UNAVAILABLE
     }
 
-    private fun updateStateAfterCompletion(utteranceId: String?) {
-        if (pendingUtterances.complete(utteranceId) && _state.value == TtsEngineState.SPEAKING) {
-            _state.value = TtsEngineState.READY
+    private fun enqueueRequest(
+        text: String,
+        languageTag: String,
+        speechRate: Float,
+        source: TtsSpeechSource,
+        expiresAtMillis: Long?,
+        replacePending: Boolean
+    ): Boolean {
+        if (text.isBlank() || !_state.value.acceptsSpeech()) return false
+        val engine = tts ?: return false
+        val request = TtsSpeechRequest(
+            id = UUID.randomUUID().toString(),
+            text = text,
+            languageTag = languageTag,
+            speechRate = speechRate,
+            source = source,
+            expiresAtMillis = expiresAtMillis
+        )
+        val action = speechQueue.enqueue(request, replacePending, System.currentTimeMillis())
+        executeActionLocked(engine, action)
+        return speechQueue.isActive(request.id) || speechQueue.containsPending(request.id)
+    }
+
+    private fun executeActionLocked(engine: TextToSpeech, action: TtsSpeechQueueAction) {
+        if (action.stopActive) {
+            runCatching { engine.stop() }
+            if (_state.value == TtsEngineState.SPEAKING) {
+                _state.value = TtsEngineState.READY
+            }
+        }
+        action.next?.let { startRequestLocked(engine, it) }
+    }
+
+    private fun startRequestLocked(engine: TextToSpeech, request: TtsSpeechRequest) {
+        if (!speechQueue.isActive(request.id)) return
+        val nowMillis = System.currentTimeMillis()
+        if (request.expiresAtMillis?.let { it <= nowMillis } == true) {
+            executeActionLocked(engine, speechQueue.complete(request.id, nowMillis))
+            return
+        }
+
+        val locale = Locale.forLanguageTag(request.languageTag)
+        if (engine.isLanguageAvailable(locale) < TextToSpeech.LANG_AVAILABLE) {
+            safeLogger.warn(
+                "MeemoTtsEngine",
+                "Locale ${request.languageTag} unavailable in installed TTS engine"
+            )
+            executeActionLocked(engine, speechQueue.complete(request.id, nowMillis))
+            return
+        }
+
+        engine.language = locale
+        engine.setSpeechRate(normalizeSpeechRate(request.speechRate))
+        // Only one utterance is submitted to Android at a time; the app queue owns ordering.
+        val result = engine.speak(request.text, TextToSpeech.QUEUE_FLUSH, null, request.id)
+        if (result != TextToSpeech.SUCCESS) {
+            safeLogger.warn("MeemoTtsEngine", "TTS engine rejected an utterance")
+            executeActionLocked(engine, speechQueue.complete(request.id, System.currentTimeMillis()))
+        }
+    }
+
+    private fun completeUtterance(utteranceId: String?) {
+        synchronized(this) {
+            val engine = tts ?: return
+            val action = speechQueue.complete(utteranceId, System.currentTimeMillis())
+            if (speechQueue.activeRequest() == null && _state.value == TtsEngineState.SPEAKING) {
+                _state.value = TtsEngineState.READY
+            }
+            executeActionLocked(engine, action)
         }
     }
 

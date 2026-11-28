@@ -28,14 +28,17 @@ class TtsController @Inject constructor(
     fun enqueueNotificationSpeech(
         text: String,
         languageTag: String,
-        speechRate: Float
-    ): Boolean {
-        return ttsEngine.speak(
-            text = text,
-            languageTag = languageTag,
-            speechRate = speechRate,
-            flushQueue = false
-        )
+        speechRate: Float,
+        expiresAtMillis: Long
+    ): Boolean = ttsEngine.enqueueNotificationSpeech(
+        text = text,
+        languageTag = languageTag,
+        speechRate = speechRate,
+        expiresAtMillis = expiresAtMillis
+    )
+
+    fun stopNotificationSpeech() {
+        ttsEngine.stopNotificationSpeech()
     }
 
     fun stopSpeaking() {

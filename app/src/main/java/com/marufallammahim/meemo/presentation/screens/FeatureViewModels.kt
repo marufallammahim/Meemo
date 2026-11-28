@@ -20,6 +20,7 @@ import com.marufallammahim.meemo.domain.model.InstalledAppInfo
 import com.marufallammahim.meemo.domain.model.UserPreferences
 import com.marufallammahim.meemo.domain.repository.MeemoRepository
 import com.marufallammahim.meemo.memory.AliasManager
+import com.marufallammahim.meemo.notifications.NotificationReadAloud
 import com.marufallammahim.meemo.permissions.PermissionCoordinator
 import com.marufallammahim.meemo.permissions.PermissionStatusSummary
 import com.marufallammahim.meemo.root.RootCommandSpec
@@ -256,6 +257,7 @@ class CapabilitiesViewModel @Inject constructor(
 class SettingsViewModel @Inject constructor(
     private val repository: MeemoRepository,
     private val credentialStore: EncryptedCredentialStore,
+    private val notificationReadAloud: NotificationReadAloud,
     val settingsCoordinator: SettingsCoordinator
 ) : ViewModel() {
 
@@ -271,7 +273,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setTtsEnabled(enabled: Boolean) {
-        viewModelScope.launch { repository.setTtsEnabled(enabled) }
+        viewModelScope.launch { notificationReadAloud.setTtsEnabled(enabled) }
     }
 
     fun setTtsRate(rate: Float) {
@@ -287,11 +289,11 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setNotificationReadAloud(enabled: Boolean) {
-        viewModelScope.launch { repository.setNotificationReadAloud(enabled) }
+        viewModelScope.launch { notificationReadAloud.setNotificationReadAloudEnabled(enabled) }
     }
 
     fun setNotificationSenderOnly(senderOnly: Boolean) {
-        viewModelScope.launch { repository.setNotificationAnnounceSenderOnly(senderOnly) }
+        viewModelScope.launch { notificationReadAloud.setNotificationSenderOnly(senderOnly) }
     }
 
     fun setQuietHours(enabled: Boolean, startHour: Int, endHour: Int) {
